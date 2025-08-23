@@ -101,7 +101,7 @@ inline void coreRenderView( coreInfo &core )
     for ( float *i = core.pFrame; i != core.pFrameEnd; ++i )  *i = 1.0f;
 }
 
-int coreMainThread( system::screen *output )
+int coreMainThread( sys::screen *output )
 {
     // setup output parameters
     coreInfo core;
@@ -119,18 +119,18 @@ int coreMainThread( system::screen *output )
     core.pFrame = 0;
 
     // spawn loader thread
-    system::thread loader( coreLoaderThread, false, &core );
+    sys::thread loader( coreLoaderThread, false, &core );
     if ( !loader )
     {
         bHasTermSignal = true;
         output->signalQuit();
-        system::userNotice( "Failed to spawn loader thread.", true );
+        sys::userNotice( _T("Failed to spawn loader thread."), true );
         return 0;
     }
 
     // wait for loading to complete
     float lticker = 0.0f;
-    output->setCaption( "dila/2006 - Loading ..." );
+    output->setCaption( _T("dila/2006 - Loading ...") );
     output->setVisible( true );
     while ( loader.isRunning() )
     {
@@ -147,7 +147,7 @@ int coreMainThread( system::screen *output )
     }
     else
     {
-        output->setCaption( "dila/2006" );
+        output->setCaption( _T("dila/2006") );
         output->clearBuffer();
 
         // main draw loop
@@ -194,7 +194,7 @@ int coreLoaderThread( coreInfo *core )
     core->pFrameEnd = core->pFrame + core->iSize;
 
     // seed random number generator
-    srand( system::getSeed() );
+    srand( sys::getSeed() );
 
     // make ship model
     models.ship.scale = 1.0f;
@@ -279,6 +279,6 @@ int coreLoaderThread( coreInfo *core )
 bool coreBadAlloc( void )
 {
     // notify user and end thread
-    system::userNotice( "Insufficient system resources: Memory allocation failed.", true );
+    sys::userNotice( _T("Insufficient sys resources: Memory allocation failed."), true );
     return false;
 }

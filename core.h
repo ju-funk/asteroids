@@ -45,6 +45,6 @@ void astDeallocSprites( coreInfo &core );
 void astCheckCollision( coreInfo &core, entity *enta, entity *entb );
 
 // thread entry proceedures in core.cpp
-int coreMainThread( system::screen *output );
+int coreMainThread( sys::screen *output );
 int coreLoaderThread( coreInfo *core );
 bool coreBadAlloc( void );

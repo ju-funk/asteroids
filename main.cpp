@@ -7,17 +7,17 @@ bool bHasTermSignal = false;
 int APIENTRY WinMain( HINSTANCE, HINSTANCE, LPSTR, int )
 {
     // query user about screen mode
-    bool bFullScreen = system::userQuery( "Would you like to play in fullscreen mode?" );
+    bool bFullScreen = sys::userQuery( _T("Would you like to play in fullscreen mode?") );
 
     // create video buffer in a desktop window
-    system::screen output( "dila/2006", 640, 480, bFullScreen );
+    sys::screen output( _T("dila/2006"), 1280, 720, bFullScreen );
     if ( !output ) return 0;
 
     // spawn the render thread. see core.cpp
-    system::thread blitter( coreMainThread, false, &output );
+    sys::thread blitter( coreMainThread, false, &output );
     if ( !blitter )
     {
-        system::userNotice( "Failed to spawn game thread.", true );
+        sys::userNotice( _T("Failed to spawn game thread."), true );
         return 0;
     }
 

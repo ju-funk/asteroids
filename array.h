@@ -206,7 +206,7 @@ array::block<T>::block( list<T> &source )
     pEnd = pBegin + blockSize;
 
     // copy each item from the source into the block
-    list<T>::iterator i = source.begin();
+    typename list<T>::iterator i = source.begin();
     for ( iterator j = begin(); j != end(); ++j, ++i )  *j = *i;
 
     // set success flag

@@ -1,32 +1,32 @@
 // SYSTEM OBJECT DECLERATIONS
 // ------------------------------------------------------------------
-namespace system
+namespace sys
 {
     class screen;
     class thread;
 
     // native api wrappers
-    void userNotice( const char *szMessage, bool isFatal );
-    bool userQuery( const char *szMessage );
+    void userNotice( const TCHAR *szMessage, bool isFatal );
+    bool userQuery( const TCHAR *szMessage );
     unsigned long getSeed( void );
 }
 
 // ------------------------------------------------------------------
 // screen object
 // ------------------------------------------------------------------
-class system::screen
+class sys::screen
 {
 public:
     // member operators
     bool operator !( void ) { return !wasInitialized; }
 
     // constructor, cleanup proceedure
-    screen( const char *szCaption, int width, int height, bool fullScreen );
+    screen( const TCHAR *szCaption, int width, int height, bool fullScreen );
     ~screen( void ) { cleanup(); }
     void cleanup( void );
 
     // display setup functions
-    void setCaption( const char *szCaption );
+    void setCaption( const TCHAR *szCaption );
     void setVisible( bool state );
     void redrawWindow( const int &x, const int &y, const int &width, const int &height );
     void flipBuffers( void );
@@ -70,7 +70,7 @@ private:
     int iHeight;
 
     RECT rSize;
-    const char *szClass;
+    TCHAR *szClass;
     bool bVisibleState;
     int iExitCode;
 
@@ -85,7 +85,7 @@ private:
 // ------------------------------------------------------------------
 // thread object
 // ------------------------------------------------------------------
-class system::thread
+class sys::thread
 {
 public:
     // member operators

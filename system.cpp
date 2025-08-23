@@ -3,19 +3,19 @@
 // ------------------------------------------------------------------
 // free function: userNotice - displays standard windows dialog
 // ------------------------------------------------------------------
-void system::userNotice( const char *szMessage, bool isFatal )
+void sys::userNotice( const TCHAR *szMessage, bool isFatal )
 {
     unsigned long int iType = MB_OK|MB_TOPMOST;
-    const char *szCaption;
+    const TCHAR *szCaption;
 
     if ( isFatal )
     {
-        szCaption = "Fatal Error";
+        szCaption = _T("Fatal Error");
         iType |= MB_ICONERROR;
     }
     else
     {
-        szCaption = "Information";
+        szCaption = _T("Information");
         iType |= MB_ICONINFORMATION;
     }
 
@@ -25,10 +25,10 @@ void system::userNotice( const char *szMessage, bool isFatal )
 // ------------------------------------------------------------------
 // free function: userQuery - displays standard windows dialog
 // ------------------------------------------------------------------
-bool system::userQuery( const char *szMessage )
+bool sys::userQuery( const TCHAR *szMessage )
 {
     // get user response
-    int iResult = MessageBox( 0, szMessage, "dila/2006", MB_YESNO|MB_TOPMOST|MB_ICONQUESTION );
+    int iResult = MessageBox( 0, szMessage, _T("dila/2006"), MB_YESNO|MB_TOPMOST|MB_ICONQUESTION );
 
     // return user selection
     if ( iResult == IDYES )  return true;
@@ -38,7 +38,7 @@ bool system::userQuery( const char *szMessage )
 // ------------------------------------------------------------------
 // free function: getSeed - uses native api's to get random seed
 // ------------------------------------------------------------------
-unsigned long system::getSeed( void )
+unsigned long sys::getSeed( void )
 {
     // get clock ticks, remove higher bytes
     unsigned long int iLow = GetTickCount() & 0xFFFF;
@@ -50,6 +50,7 @@ unsigned long system::getSeed( void )
     // get clock milloseconds
     unsigned long int iHigh = lpTime.wMilliseconds;
 
+#ifndef _WIN64
     // xor processor tick count with seeds
     __asm
     {
@@ -63,7 +64,7 @@ unsigned long system::getSeed( void )
         pop ebx
         pop eax
     }
-
+#endif
     // combine and return
     return (iHigh<<16) | iLow;
 }
@@ -71,7 +72,7 @@ unsigned long system::getSeed( void )
 // ------------------------------------------------------------------
 // screen object: winDlgProc - static event handling proceedure
 // ------------------------------------------------------------------
-LRESULT CALLBACK system::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
     switch( uMsg )
     {
@@ -108,7 +109,7 @@ LRESULT CALLBACK system::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam
 // ------------------------------------------------------------------
 // screen object: constructor - create window and set fullscreen
 // ------------------------------------------------------------------
-system::screen::screen( const char *szCaption, int width, int height, bool fullScreen )
+sys::screen::screen( const TCHAR *szCaption, int width, int height, bool fullScreen )
 : wasInitialized(false), hasFullScreen(false), iWidth(width), iHeight(height)
 {
     // change display mode if required
@@ -117,7 +118,7 @@ system::screen::screen( const char *szCaption, int width, int height, bool fullS
         if ( !toggleFullScreen() )
         {
             // revert to windowed mode on failure
-            userNotice( "Sorry, the display mode could not be changed.\nWindowed mode will be used.", false );
+            userNotice( _T("Sorry, the display mode could not be changed.\nWindowed mode will be used."), false );
             fullScreen = false;
         }
     }
@@ -136,7 +137,7 @@ system::screen::screen( const char *szCaption, int width, int height, bool fullS
 // ------------------------------------------------------------------
 // screen object: cleanup - deallocate desktop window resources
 // ------------------------------------------------------------------
-void system::screen::cleanup( void )
+void sys::screen::cleanup( void )
 {
     // reset display mode
     if ( hasFullScreen )  toggleFullScreen();
@@ -155,14 +156,14 @@ void system::screen::cleanup( void )
 // ------------------------------------------------------------------
 // screen object: doEvents - process window messages
 // ------------------------------------------------------------------
-bool system::screen::doEvents( void )
+bool sys::screen::doEvents( void )
 {
     BOOL iResult = GetMessage( &wMsg, 0, 0, 0 );
 
     // handle errors, according to msdn
     if ( iResult == -1 )
     {
-        userNotice( "Window message pump failure.", true );
+        userNotice( _T("Window message pump failure."), true );
         return false;
     }
 
@@ -187,20 +188,20 @@ bool system::screen::doEvents( void )
 // ------------------------------------------------------------------
 // screen object: create - create window and video buffer
 // ------------------------------------------------------------------
-bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
+bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
 {
     // fill class struct
     WNDCLASSEX wClass = { 0 };
     wClass.cbSize = sizeof(WNDCLASSEX);
     wClass.lpfnWndProc = winDlgProc;
     wClass.hInstance = hInstance = GetModuleHandle(0);
-    wClass.lpszClassName = szClass = "dilaDemo";
+    wClass.lpszClassName = szClass = (TCHAR *) _T("dilaDemo");
     wClass.hCursor = LoadCursor( 0, IDC_ARROW );
 
     // attempt create window class
     if ( !RegisterClassEx(&wClass) )
     {
-        userNotice( "Unable to register window class.", true );
+        userNotice( _T("Unable to register window class."), true );
         return false;
     }
 
@@ -218,7 +219,7 @@ bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     if ( !AdjustWindowRectEx(&rSize, dwStyle, 0, 0) )
     {
         UnregisterClass( szClass, hInstance );
-        userNotice( "Could not set correct window dimensions.", true );
+        userNotice( _T("Could not set correct window dimensions."), true );
         return false;
     }
 
@@ -235,7 +236,7 @@ bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
         if ( !cx || !cy )
         {
             UnregisterClass( szClass, hInstance );
-            userNotice( "Could not determine current screen dimensions.", true );
+            userNotice( _T("Could not determine current screen dimensions."), true );
             return false;
         }
 
@@ -256,7 +257,7 @@ bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     if ( !hWnd )
     {
         UnregisterClass( szClass, hInstance );
-        userNotice( "Could not create desktop window.", true );
+        userNotice( _T("Could not create desktop window."), true );
         return false;
     }
 
@@ -270,7 +271,7 @@ bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     {
         DestroyWindow( hWnd );
         UnregisterClass( szClass, hInstance );
-        userNotice( "Could not obtain window device handle.", true );
+        userNotice( _T("Could not obtain window device handle."), true );
         return false;
     }
 
@@ -287,7 +288,7 @@ bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
         ReleaseDC( hWnd, hDC );
         DestroyWindow( hWnd );
         UnregisterClass( szClass, hInstance );
-        userNotice( "Unable to create new device context.", true );
+        userNotice( _T("Unable to create new device context."), true );
         return false;
     }
 
@@ -311,7 +312,7 @@ bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
         ReleaseDC( hWnd, hDC );
         DestroyWindow( hWnd );
         UnregisterClass( szClass, hInstance );
-        userNotice( "Could not create bitmap buffer.", true );
+        userNotice( _T("Could not create bitmap buffer."), true );
         return false;
     }
 
@@ -330,7 +331,7 @@ bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
         ReleaseDC( hWnd, hDC );
         DestroyWindow( hWnd );
         UnregisterClass( szClass, hInstance );
-        userNotice( "Could not select bitmap into device context.", true );
+        userNotice( _T("Could not select bitmap into device context."), true );
         return false;
     }
 
@@ -340,7 +341,7 @@ bool system::screen::create( bool topMost, bool hasCaption, bool scrCenter )
 // ------------------------------------------------------------------
 // screen object: toggleFullScreen - change display resolution
 // ------------------------------------------------------------------
-bool system::screen::toggleFullScreen( void )
+bool sys::screen::toggleFullScreen( void )
 {
     // set fullscreen mode
     if ( !hasFullScreen )
@@ -400,7 +401,7 @@ bool system::screen::toggleFullScreen( void )
 // ------------------------------------------------------------------
 // screen object: setCaption - changes window caption bar text
 // ------------------------------------------------------------------
-void system::screen::setCaption( const char *szCaption )
+void sys::screen::setCaption( const TCHAR *szCaption )
 {
     // update window caption text
     SetWindowText( hWnd, szCaption );
@@ -409,7 +410,7 @@ void system::screen::setCaption( const char *szCaption )
 // ------------------------------------------------------------------
 // screen object: setVisible - show/hide desktop window
 // ------------------------------------------------------------------
-void system::screen::setVisible( bool state )
+void sys::screen::setVisible( bool state )
 {
     // show/hide window
     if ( bVisibleState = state )
@@ -424,7 +425,7 @@ void system::screen::setVisible( bool state )
 // ------------------------------------------------------------------
 // screen object: redrawWindow - draw buffer to window area
 // ------------------------------------------------------------------
-void system::screen::redrawWindow( const int &x, const int &y, const int &width, const int &height )
+void sys::screen::redrawWindow( const int &x, const int &y, const int &width, const int &height )
 {
     BitBlt( hDC, x, y, width, height, hVideoDC, x, y, SRCCOPY );
 }
@@ -432,7 +433,7 @@ void system::screen::redrawWindow( const int &x, const int &y, const int &width,
 // ------------------------------------------------------------------
 // screen object: redrawWindow - redraw entire window area
 // ------------------------------------------------------------------
-void system::screen::flipBuffers( void )
+void sys::screen::flipBuffers( void )
 {
     BitBlt( hDC, 0, 0, iWidth, iHeight, hVideoDC, 0, 0, SRCCOPY );
 }
@@ -440,7 +441,7 @@ void system::screen::flipBuffers( void )
 // ------------------------------------------------------------------
 // screen object: clearBuffer - initialize video buffer
 // ------------------------------------------------------------------
-void system::screen::clearBuffer( void )
+void sys::screen::clearBuffer( void )
 {
     ZeroMemory( pBitmap, iBmpSize );
 }
@@ -448,7 +449,7 @@ void system::screen::clearBuffer( void )
 // ------------------------------------------------------------------
 // thread object: constructor - start thread in rquested state
 // ------------------------------------------------------------------
-system::thread::thread( void *threadProc, bool startPaused, void *threadInfo )
+sys::thread::thread( void *threadProc, bool startPaused, void *threadInfo )
 : wasInitialized(false), bThreadState( !startPaused )
 {
     // set initial run state
@@ -468,7 +469,7 @@ system::thread::thread( void *threadProc, bool startPaused, void *threadInfo )
 // ------------------------------------------------------------------
 // thread object: destructor - terminate thread
 // ------------------------------------------------------------------
-system::thread::~thread( void )
+sys::thread::~thread( void )
 {
     // delay thread termination
     DWORD dwResult = WaitForSingleObject( hThread, 200 );
@@ -483,7 +484,7 @@ system::thread::~thread( void )
 // ------------------------------------------------------------------
 // thread object: pause - pause thread execution
 // ------------------------------------------------------------------
-bool system::thread::pause( void )
+bool sys::thread::pause( void )
 {
     // check current suspend count
     if ( dwPauseCount == MAXIMUM_SUSPEND_COUNT )  return false;
@@ -500,7 +501,7 @@ bool system::thread::pause( void )
 // ------------------------------------------------------------------
 // thread object: resume - resume thread execution
 // ------------------------------------------------------------------
-bool system::thread::resume( void )
+bool sys::thread::resume( void )
 {
     // check if thread is already running
     if ( !dwPauseCount )  return false;
@@ -517,7 +518,7 @@ bool system::thread::resume( void )
 // ------------------------------------------------------------------
 // thread object: waitTillDone - block till terminate signal received
 // ------------------------------------------------------------------
-void system::thread::waitForSignal( void )
+void sys::thread::waitForSignal( void )
 {
     // wait for thread to finish
     WaitForSingleObject( hThread, INFINITE );
@@ -526,7 +527,7 @@ void system::thread::waitForSignal( void )
 // ------------------------------------------------------------------
 // thread object: isRunning - return the threads running state
 // ------------------------------------------------------------------
-bool system::thread::isRunning( void )
+bool sys::thread::isRunning( void )
 {
     // get thread state
     DWORD dwResult = WaitForSingleObject( hThread, 0 );
@@ -541,7 +542,7 @@ bool system::thread::isRunning( void )
 // ------------------------------------------------------------------
 // thread object: getExitCode - retrieve the threads exit code
 // ------------------------------------------------------------------
-int system::thread::getExitCode( void )
+int sys::thread::getExitCode( void )
 {
     DWORD dwExitCode;
     GetExitCodeThread( hThread, &dwExitCode );
