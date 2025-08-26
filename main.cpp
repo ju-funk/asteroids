@@ -3,6 +3,9 @@
 
 // global running status flags
 bool bHasTermSignal = false;
+sys::screen output;
+
+
 #ifdef  UNICODE
 #define tWinMain wWinMain
 #else
@@ -15,7 +18,7 @@ int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
     bool bFullScreen = sys::userQuery( _T("Would you like to play in fullscreen mode?") );
 
     // create video buffer in a desktop window
-    sys::screen output( _T("dila/2006"), 1280, 720, bFullScreen );
+    output.Init( _T("dila/2006"), 1280, 720, bFullScreen );
     if ( !output )
         return 0;
 
