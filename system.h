@@ -28,7 +28,6 @@ public:
     // display setup functions
     void setCaption( const TCHAR *szCaption );
     void setVisible( bool state );
-    void redrawWindow( const int &x, const int &y, const int &width, const int &height );
     void flipBuffers( void );
     void clearBuffer( void );
 
@@ -96,14 +95,7 @@ public:
     ~thread( void );
 
     // thread state control
-    bool pause( void );
-    bool resume( void );
     void waitForSignal( void );
-    bool isRunning( void );
-    int getExitCode( void );
-
-    // member accessors
-    bool getPausedState( void ) { return bThreadState; }
 
 private:
     // thread handle and id

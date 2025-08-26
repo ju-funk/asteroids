@@ -434,14 +434,6 @@ void sys::screen::setVisible( bool state )
 }
 
 // ------------------------------------------------------------------
-// screen object: redrawWindow - draw buffer to window area
-// ------------------------------------------------------------------
-void sys::screen::redrawWindow( const int &x, const int &y, const int &width, const int &height )
-{
-    BitBlt( hDC, x, y, width, height, hVideoDC, x, y, SRCCOPY );
-}
-
-// ------------------------------------------------------------------
 // screen object: redrawWindow - redraw entire window area
 // ------------------------------------------------------------------
 void sys::screen::flipBuffers( void )
@@ -493,39 +485,6 @@ sys::thread::~thread( void )
     }
 }
 
-// ------------------------------------------------------------------
-// thread object: pause - pause thread execution
-// ------------------------------------------------------------------
-bool sys::thread::pause( void )
-{
-    // check current suspend count
-    if ( dwPauseCount == MAXIMUM_SUSPEND_COUNT )  return false;
-
-    // attempt to pause the thread
-    dwPauseCount = SuspendThread( hThread );
-
-    // verify success
-    if ( dwPauseCount == -1 )  return false;
-
-    return true;
-}
-
-// ------------------------------------------------------------------
-// thread object: resume - resume thread execution
-// ------------------------------------------------------------------
-bool sys::thread::resume( void )
-{
-    // check if thread is already running
-    if ( !dwPauseCount )  return false;
-
-    // attempt to resume execution
-    dwPauseCount = ResumeThread( hThread );
-
-    // verify success
-    if ( dwPauseCount == -1 )  return false;
-
-    return true;
-}
 
 // ------------------------------------------------------------------
 // thread object: waitTillDone - block till terminate signal received
@@ -536,28 +495,3 @@ void sys::thread::waitForSignal( void )
     WaitForSingleObject( hThread, INFINITE );
 }
 
-// ------------------------------------------------------------------
-// thread object: isRunning - return the threads running state
-// ------------------------------------------------------------------
-bool sys::thread::isRunning( void )
-{
-    // get thread state
-    DWORD dwResult = WaitForSingleObject( hThread, 0 );
-
-    // if the thread is still running, return false
-    if ( dwResult == WAIT_OBJECT_0 )  return false;
-
-    // else the thread is finished
-    return true;
-}
-
-// ------------------------------------------------------------------
-// thread object: getExitCode - retrieve the threads exit code
-// ------------------------------------------------------------------
-int sys::thread::getExitCode( void )
-{
-    DWORD dwExitCode;
-    GetExitCodeThread( hThread, &dwExitCode );
-
-    return dwExitCode;
-}
