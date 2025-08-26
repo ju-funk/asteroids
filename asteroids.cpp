@@ -1,14 +1,31 @@
 #include "main.h"
 #include "core.h"
 
+#include <math.h>
+
 inline bool astHandleInput( coreInfo &core )
 {
     // a pointer to our spaceship
     entity *spaceship = core.sprites.begin()->value;
 
-    if ( GetAsyncKeyState(VK_SPACE) & 1)
+    int ff = 1;
+    POINT mousePos; ;
+    if(!output.GetMousePos(mousePos))
+        ff = 2;
+
+    if ( GetAsyncKeyState(VK_SPACE) & 1 || GetAsyncKeyState(VK_LBUTTON) & ff)   // VK_MBUTTON
         if ( !astFireBullet(core) )  
             return false;
+
+    if (ff == 1)
+    {
+        mousePos.y -= core.iCHeight;
+        mousePos.x -= core.iCWidth;
+
+        spaceship->rz = (float)atan2(mousePos.x, -mousePos.y);
+        if (spaceship->rz < 0)
+            spaceship->rz += 2 * M_PI; // Bereich 0...2Pi
+    }
 
     if ( GetAsyncKeyState(VK_UP) )
         spaceship->speed += 0.01f;
@@ -18,6 +35,9 @@ inline bool astHandleInput( coreInfo &core )
         spaceship->rz -= 0.1f;
     if ( GetAsyncKeyState(VK_RIGHT) )
         spaceship->rz += 0.1f;
+
+    if ( GetAsyncKeyState(VK_CONTROL) || GetAsyncKeyState(VK_RBUTTON) )
+        spaceship->pos.g = spaceship->speed = spaceship->pos.r = 0.0f;
 
     return true;
 }

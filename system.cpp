@@ -114,9 +114,12 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
 // ------------------------------------------------------------------
 // screen object: constructor - create window and set fullscreen
 // ------------------------------------------------------------------
-sys::screen::screen( const TCHAR *szCaption, int width, int height, bool fullScreen )
-: wasInitialized(false), hasFullScreen(false), iWidth(width), iHeight(height)
+void sys::screen::Init( const TCHAR *szCaption, int width, int height, bool fullScreen )
 {
+    wasInitialized = false;
+    iWidth  = width;
+    iHeight = height;
+
     // change display mode if required
     if ( fullScreen )
     {
@@ -432,6 +435,23 @@ void sys::screen::setVisible( bool state )
     else
         ShowWindow( hWnd, SW_HIDE );
 }
+
+// mouse-pos handling
+bool sys::screen::GetMousePos(POINT& mousePos)
+{
+    bool ret = true;
+
+    GetCursorPos(&mousePos);
+    ScreenToClient(hWnd, &mousePos);
+
+    if (mousePos.x < 0 || mousePos.y < 0 ||
+        mousePos.x > iWidth || mousePos.y > iHeight)
+        ret = false;
+
+    return ret;
+}
+
+
 
 // ------------------------------------------------------------------
 // screen object: redrawWindow - redraw entire window area

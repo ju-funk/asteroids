@@ -21,7 +21,7 @@ public:
     bool operator !( void ) { return !wasInitialized; }
 
     // constructor, cleanup proceedure
-    screen( const TCHAR *szCaption, int width, int height, bool fullScreen );
+    void Init( const TCHAR *szCaption, int width, int height, bool fullScreen );
     ~screen( void ) { cleanup(); }
     void cleanup( void );
 
@@ -41,6 +41,8 @@ public:
     unsigned long *getScreenBuffer( void ){ return pBitmap; }
     int getWidth( void ) { return iWidth; }
     int getHeight( void ) { return iHeight; }
+
+    bool GetMousePos(POINT &mousePos);
 
 private:
     // main init function

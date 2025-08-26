@@ -8,3 +8,4 @@
 
 // global running state flags
 extern bool bHasTermSignal;
+extern sys::screen output;
