@@ -123,35 +123,25 @@ int coreMainThread( sys::screen *output )
     core.points = 0;
     core.pFrame = 0;
 
-    // spawn loader thread
-    sys::thread loader( coreLoaderThread, false, &core );
-    if ( !loader )
-    {
-        bHasTermSignal = true;
-        output->signalQuit();
-        sys::userNotice( _T("Failed to spawn loader thread."), true );
-        return 0;
-    }
-
-    // wait for loading to complete
-    float lticker = 0.0f;
-    output->setCaption( _T("dila/2006 - Loading ...") );
-    output->setVisible( true );
-    while ( loader.isRunning() )
-    {
-        gfxDrawLoader( core, lticker );
-        output->flipBuffers();
-        Sleep( 10 );
-    }
-
     // check if load succeeded
-    if ( !loader.getExitCode() )
+    if ( !coreLoaderThread(&core) )
     {
         // something went wrong
         bHasTermSignal = true;
     }
     else
     {
+        output->setVisible(true);
+        float lticker = 0.0f;
+        int loop = 0;
+        while (loop < 3)
+        {
+            gfxDrawLoader( core, lticker );
+            loop += lticker > 5.9 ? 1 : 0;
+            output->flipBuffers();
+            Sleep( 10 );
+        }
+
         output->setCaption( _T("dila/2006") );
         output->clearBuffer();
 
