@@ -39,7 +39,7 @@ public:
     // private accessors
     bool isVisible( void ) { return bVisibleState; }
     int getExitCode( void ) { return iExitCode; }
-    unsigned long int *getScreenBuffer( void ){ return (unsigned long int *)pBitmap; }
+    unsigned long *getScreenBuffer( void ){ return pBitmap; }
     int getWidth( void ) { return iWidth; }
     int getHeight( void ) { return iHeight; }
 
@@ -63,8 +63,8 @@ private:
     HDC hVideoDC;
     HBITMAP hBitmap;
     HGDIOBJ hOldObject;
-    unsigned long int *pBitmap;
-    unsigned long int *pBmpEnd;
+    unsigned long *pBitmap;
+    unsigned long *pBmpEnd;
     int iBmpSize;
     int iWidth;
     int iHeight;

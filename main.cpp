@@ -3,15 +3,21 @@
 
 // global running status flags
 bool bHasTermSignal = false;
+#ifdef  UNICODE
+#define tWinMain wWinMain
+#else
+#define tWinMain WinMain
+#endif
 
-int APIENTRY WinMain( HINSTANCE, HINSTANCE, LPSTR, int )
+int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
 {
     // query user about screen mode
     bool bFullScreen = sys::userQuery( _T("Would you like to play in fullscreen mode?") );
 
     // create video buffer in a desktop window
     sys::screen output( _T("dila/2006"), 1280, 720, bFullScreen );
-    if ( !output ) return 0;
+    if ( !output )
+        return 0;
 
     // spawn the render thread. see core.cpp
     sys::thread blitter( coreMainThread, false, &output );
