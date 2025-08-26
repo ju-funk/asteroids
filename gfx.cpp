@@ -11,9 +11,9 @@ inline float frand( void )
 // combine RGB colour channels in unsigned long
 inline unsigned long int gfxRGB( float r, float g, float b )
 {
-    unsigned long int red = (unsigned long int)(r * 255);
-    unsigned long int green = (unsigned long int)(g * 255);
-    unsigned long int blue = (unsigned long int)(b * 255);
+    unsigned long red = (unsigned long int)(r * 255);
+    unsigned long green = (unsigned long int)(g * 255);
+    unsigned long blue = (unsigned long int)(b * 255);
 
     unsigned long int result = (red<<16) | (green<<8) | blue;
 
@@ -59,15 +59,19 @@ bool gfxGenShip( array::list<vertex> &output, float detail )
         pt.y = -0.6f + i;
         pt.z = 0.0f;
         pt.r = pt.g = pt.b = 1.0f;
-        if ( !output.push_back(pt) )  return false;
+        if ( !output.push_back(pt) )
+            return false;
         pt.x = -pt.x;
-        if ( !output.push_back(pt) )  return false;
+        if ( !output.push_back(pt) )
+            return false;
 
         pt.x = i;
         pt.y = 0.4f;
-        if ( !output.push_back(pt) )  return false;
+        if ( !output.push_back(pt) )
+            return false;
         pt.x = -pt.x;
-        if ( !output.push_back(pt) )  return false;
+        if ( !output.push_back(pt) )
+            return false;
     }
 
     return true;
@@ -97,13 +101,15 @@ bool gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, ve
             pt.x = cosf(radj+roffset) * cosf(radi+roffset) * (radius+roffset);
             pt.y = sinf(radi+roffset) * (radius+roffset);
             pt.z = sinf(radj+roffset) * cosf(radi+roffset) * (radius+roffset);
-            if ( !output.push_back(pt) )  return false;
+            if ( !output.push_back(pt) )
+                return false;
 
             // flip y to mirror the half sphere
             // flip x to reduce artifacts
             pt.x = -pt.x;
             pt.y = -pt.y;
-            if ( !output.push_back(pt) )  return false;
+            if ( !output.push_back(pt) )
+                return false;
         }
     }
 
@@ -131,7 +137,8 @@ bool gfxGenStars( array::list<vertex> &output, int num )
         float colour = frand();
 
         vertex star = { xpos, ypos, 0.0f, colour, colour, colour };
-        if ( !output.push_back(star) )  return false;
+        if ( !output.push_back(star) )
+            return false;
     }
 
     return true;

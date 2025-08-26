@@ -31,8 +31,10 @@ bool sys::userQuery( const TCHAR *szMessage )
     int iResult = MessageBox( 0, szMessage, _T("dila/2006"), MB_YESNO|MB_TOPMOST|MB_ICONQUESTION );
 
     // return user selection
-    if ( iResult == IDYES )  return true;
-    else  return false;
+    if ( iResult == IDYES )
+        return true;
+    else
+        return false;
 }
 
 // ------------------------------------------------------------------
@@ -41,14 +43,14 @@ bool sys::userQuery( const TCHAR *szMessage )
 unsigned long sys::getSeed( void )
 {
     // get clock ticks, remove higher bytes
-    unsigned long int iLow = GetTickCount() & 0xFFFF;
+    unsigned long iLow = GetTickCount64() & 0xFFFF;
 
     // retrieve system clock
     SYSTEMTIME lpTime = { 0 };
     GetLocalTime( &lpTime );
 
     // get clock milloseconds
-    unsigned long int iHigh = lpTime.wMilliseconds;
+    unsigned long iHigh = lpTime.wMilliseconds;
 
 #ifndef _WIN64
     // xor processor tick count with seeds
@@ -77,7 +79,8 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
     switch( uMsg )
     {
     case WM_KEYDOWN:
-        if ( wParam != VK_ESCAPE )  break;
+        if ( wParam != VK_ESCAPE )
+            break;
         // handle escape key as close event
 
     case WM_CLOSE:
@@ -86,7 +89,9 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
         {
             bHasTermSignal = true;
             ShowWindow( hWnd, SW_HIDE );
-        } else {
+        }
+        else
+        {
             // if threads have finished, kill the dialog
             screen *owner = (screen *)wParam;
             owner->cleanup();
@@ -125,7 +130,8 @@ sys::screen::screen( const TCHAR *szCaption, int width, int height, bool fullScr
 
     // create the window, verify success
     bool bResult = create( fullScreen, !fullScreen, !fullScreen );
-    if ( !bResult )  return;
+    if ( !bResult )
+        return;
 
     // set caption text
     setCaption( szCaption );
@@ -140,7 +146,8 @@ sys::screen::screen( const TCHAR *szCaption, int width, int height, bool fullScr
 void sys::screen::cleanup( void )
 {
     // reset display mode
-    if ( hasFullScreen )  toggleFullScreen();
+    if ( hasFullScreen )
+        toggleFullScreen();
 
     // cleanup gdi buffer
     SelectObject( hVideoDC, hOldObject );
@@ -224,7 +231,8 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     }
 
     // set true height and width of window area
-    rSize.right -= rSize.left;  rSize.bottom -= rSize.top;
+    rSize.right -= rSize.left;
+    rSize.bottom -= rSize.top;
 
     // if centered, set top/left
     if ( scrCenter )
@@ -318,7 +326,7 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
 
     // store address of buffer end and set size
     pBmpEnd = pBitmap + iWidth*iHeight;
-    iBmpSize = iWidth*iHeight*4;
+    iBmpSize = iWidth*iHeight * sizeof(unsigned long);
 
     // select GDI object into new device context
     hOldObject = SelectObject( hVideoDC, hBitmap );
@@ -354,7 +362,8 @@ bool sys::screen::toggleFullScreen( void )
         BOOL bResult = EnumDisplaySettings( 0, ENUM_CURRENT_SETTINGS, &dmOriginalConfig );
 
         // verify success
-        if ( !bResult )  return false;
+        if ( !bResult )
+            return false;
 
         // duplicate current config, and adjust resolution
         DEVMODE dmNewConfig = dmOriginalConfig;
@@ -363,13 +372,15 @@ bool sys::screen::toggleFullScreen( void )
 
         // test if the display mode is valid
         LONG iResult = ChangeDisplaySettings( &dmNewConfig, CDS_TEST );
-        if ( iResult != DISP_CHANGE_SUCCESSFUL )  return false;
+        if ( iResult != DISP_CHANGE_SUCCESSFUL )
+            return false;
 
         // if the display test succeeded, change the resolution
         iResult = ChangeDisplaySettings( &dmNewConfig, CDS_FULLSCREEN );
 
         // verify success
-        if ( iResult != DISP_CHANGE_SUCCESSFUL )  return false;
+        if ( iResult != DISP_CHANGE_SUCCESSFUL )
+            return false;
 
         // hide system cursor
         ShowCursor( false );
@@ -450,7 +461,7 @@ void sys::screen::clearBuffer( void )
 // thread object: constructor - start thread in rquested state
 // ------------------------------------------------------------------
 sys::thread::thread( void *threadProc, bool startPaused, void *threadInfo )
-: wasInitialized(false), bThreadState( !startPaused )
+: wasInitialized(false), bThreadState( !startPaused ), dwPauseCount{0}
 {
     // set initial run state
     DWORD dwFlags = ( startPaused ? CREATE_SUSPENDED : 0 );
@@ -460,7 +471,8 @@ sys::thread::thread( void *threadProc, bool startPaused, void *threadInfo )
         (LPTHREAD_START_ROUTINE)threadProc, (LPVOID)threadInfo, dwFlags, &dwThread );
 
     // verify success
-    if ( !hThread )  return;
+    if ( !hThread )
+        return;
 
     // set success flag
     wasInitialized = true;

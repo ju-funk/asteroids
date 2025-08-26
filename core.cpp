@@ -20,14 +20,16 @@ inline void coreRenderView( coreInfo &core )
             for ( ++k; k != core.sprites.end(); ++k )
             {
                 entity *other = *k;
-                if ( !other->canCollide )  continue;
+                if ( !other->canCollide )
+                    continue;
                 astCheckCollision( core, sprite, other );
             }
         }
 
         // used for colour fadeout, avoid per pixel division
         float recp = 0.0f;
-        if ( sprite->scale > 1.0f )  recp = 1/sprite->scale;
+        if ( sprite->scale > 1.0f )
+            recp = 1/sprite->scale;
 
         // setup sprites orientation matrix
         array::matrix<float> m( sprite->rx, sprite->ry, sprite->rz );
@@ -78,12 +80,14 @@ inline void coreRenderView( coreInfo &core )
             if ( offset < 0 )
             {
                 // skip pixel if model is exploding
-                if ( sprite->scale > 1.0f ) continue;
+                if ( sprite->scale > 1.0f )
+                    continue;
                 offset += core.iSize;
             }
             else if ( offset >= core.iSize )
             {
-                if ( sprite->scale > 1.0f ) continue;
+                if ( sprite->scale > 1.0f )
+                    continue;
                 offset -= core.iSize;
             }
 
@@ -98,7 +102,8 @@ inline void coreRenderView( coreInfo &core )
     }
 
     // reset frame buffer
-    for ( float *i = core.pFrame; i != core.pFrameEnd; ++i )  *i = 1.0f;
+    for ( float *i = core.pFrame; i != core.pFrameEnd; ++i )
+        *i = 1.0f;
 }
 
 int coreMainThread( sys::screen *output )
@@ -184,13 +189,15 @@ int coreLoaderThread( coreInfo *core )
 {
     // lists hold vertices, pointer to model struct
     array::list<vertex> plist;
-    if ( !plist )  return coreBadAlloc();
+    if ( !plist )
+        return coreBadAlloc();
     array::list<vertex>::size_type nlast;
     coreInfo::modPtrs &models = core->models;
 
     // allocate frame buffer - not used for loading animation
     core->pFrame = new float[ core->iSize ];
-    if ( !core->pFrame )  return coreBadAlloc();
+    if ( !core->pFrame )
+        return coreBadAlloc();
     core->pFrameEnd = core->pFrame + core->iSize;
 
     // seed random number generator
@@ -198,7 +205,8 @@ int coreLoaderThread( coreInfo *core )
 
     // make ship model
     models.ship.scale = 1.0f;
-    if ( !gfxGenShip(plist, 0.05f) )  return coreBadAlloc();
+    if ( !gfxGenShip(plist, 0.05f) )
+        return coreBadAlloc();
     models.ship.npoints = plist.size();
     nlast = models.ship.npoints;
 
@@ -206,7 +214,8 @@ int coreLoaderThread( coreInfo *core )
     models.misile.scale = 0.5f;
     vertex colour = { 0.0f, 0.0f, 0.0f, 0.5f, 0.5f, 0.5f };
     bool bResult = gfxGenAsteroid( plist, models.misile.scale, 5.0f, colour );
-    if ( !bResult )  return coreBadAlloc();
+    if ( !bResult )
+        return coreBadAlloc();
     models.misile.npoints = plist.size() - nlast;
     nlast += models.misile.npoints;
 
@@ -214,7 +223,8 @@ int coreLoaderThread( coreInfo *core )
     models.stroidTiny.scale = 1.0f;
     colour.r = 0.2f;  colour.g = 0.3f;  colour.b = 0.2f;
     bResult = gfxGenAsteroid( plist, models.stroidTiny.scale, 10.0f, colour );
-    if ( !bResult )  return coreBadAlloc();
+    if ( !bResult )
+        return coreBadAlloc();
     models.stroidTiny.npoints = plist.size() - nlast;
     nlast += models.stroidTiny.npoints;
 
@@ -222,7 +232,8 @@ int coreLoaderThread( coreInfo *core )
     models.stroidMed.scale = 2.0f;
     colour.r = 0.2f;  colour.g = 0.3f;  colour.b = 0.4f;
     bResult = gfxGenAsteroid( plist, models.stroidMed.scale, 15.0f, colour );
-    if ( !bResult )  return coreBadAlloc();
+    if ( !bResult )
+        return coreBadAlloc();
     models.stroidMed.npoints = plist.size() - nlast;
     nlast += models.stroidMed.npoints;
 
@@ -230,19 +241,22 @@ int coreLoaderThread( coreInfo *core )
     models.stroidBig.scale = 3.0f;
     colour.r = 0.5f;  colour.g = 0.3f;  colour.b = 0.3f;
     bResult = gfxGenAsteroid( plist, models.stroidBig.scale, 20.0f, colour );
-    if ( !bResult )  return coreBadAlloc();
+    if ( !bResult )
+        return coreBadAlloc();
     models.stroidBig.npoints = plist.size() - nlast;
     nlast += models.stroidBig.npoints;
 
     // generate starfield
     models.stars.scale = 1.0f;
-    if ( !gfxGenStars(plist, 50) )  return coreBadAlloc();
+    if ( !gfxGenStars(plist, 50) )
+        return coreBadAlloc();
     models.stars.npoints = plist.size() - nlast;
     nlast += models.stars.npoints;
 
     // all models generated, convert to linear array
     core->points = new array::block<vertex>( plist );
-    if ( !core->points )  return coreBadAlloc();
+    if ( !core->points )
+        return coreBadAlloc();
 
     // set ship pointers into linear array
     models.ship.pBegin = core->points->begin();

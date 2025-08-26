@@ -6,13 +6,18 @@ inline bool astHandleInput( coreInfo &core )
     // a pointer to our spaceship
     entity *spaceship = core.sprites.begin()->value;
 
-    if ( GetAsyncKeyState(VK_SPACE) & 1 )
-        if ( !astFireBullet(core) )  return false;
+    if ( GetAsyncKeyState(VK_SPACE) & 1)
+        if ( !astFireBullet(core) )  
+            return false;
 
-    if ( GetAsyncKeyState(VK_UP) )  spaceship->speed += 0.01f;
-    if ( GetAsyncKeyState(VK_DOWN) )  spaceship->speed -= 0.01f;
-    if ( GetAsyncKeyState(VK_LEFT) )  spaceship->rz -= 0.1f;
-    if ( GetAsyncKeyState(VK_RIGHT) )  spaceship->rz += 0.1f;
+    if ( GetAsyncKeyState(VK_UP) )
+        spaceship->speed += 0.01f;
+    if ( GetAsyncKeyState(VK_DOWN) )
+        spaceship->speed -= 0.01f;
+    if ( GetAsyncKeyState(VK_LEFT) )
+        spaceship->rz -= 0.1f;
+    if ( GetAsyncKeyState(VK_RIGHT) )
+        spaceship->rz += 0.1f;
 
     return true;
 }
@@ -45,8 +50,10 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
     float maxdist = enta->points.scale + entb->points.scale;
 
     // temp position wrap, fixes bugs at edge of screen
-    if ( xdif-core.fSWidth > maxdist )  xdif -= core.fSWidth*2;
-    if ( ydif-core.fSHeight > maxdist )  ydif -= core.fSHeight*2;
+    if ( xdif-core.fSWidth > maxdist )
+        xdif -= core.fSWidth*2;
+    if ( ydif-core.fSHeight > maxdist )
+        ydif -= core.fSHeight*2;
 
     // has a collision occured?
     float dist = sqrtf( xdif*xdif + ydif*ydif );
@@ -64,7 +71,6 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             enta->updatePos();
             enta->speed = oldspeed;
         }
-
         else // other collisions cause damage to entities
         {
             // if the first entity is dead, start exploding
@@ -84,7 +90,6 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             }
         }
     }
-
 }
 
 // ------------------------------------------------------------------
@@ -96,7 +101,8 @@ bool astFireBullet( coreInfo &core )
     // allocate new sprite using bullet model
     entity *ship = core.sprites.begin()->value;
     entity *bullet = new entity( core.models.misile, 0.0f, 0.0f );
-    if ( !bullet )  return false;
+    if ( !bullet )  
+        return false;
 
     // copy position
     bullet->pos = ship->pos;
@@ -111,7 +117,8 @@ bool astFireBullet( coreInfo &core )
     bullet->setDir( ship->rz );
 
     // add bullet to active sprite list
-    if ( !core.sprites.push_back(bullet) )  return false;
+    if ( !core.sprites.push_back(bullet) )
+        return false;
 
     return true;
 }
@@ -153,14 +160,16 @@ bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
 
         // make asteroid sprite using player values
         entity *sprite = new entity( newType, xpos, ypos );
-        if ( !sprite )  return false;
+        if ( !sprite )
+            return false;
         sprite->isAsteroid = true;
         sprite->speed = 0.1f + 0.2f * frand();
         sprite->health = iHealth;
 
         // set random direction, add to sprite list
         sprite->setDir( posrad );
-        if ( !core.sprites.push_back(sprite) )  return false;
+        if ( !core.sprites.push_back(sprite) )
+            return false;
     }
 
     return true;
@@ -175,12 +184,15 @@ bool astUpdateState( coreInfo &core )
     entity *ship = core.sprites.begin()->value;
     if ( !ship->health )
     {
-        if ( !astNewGame(&core) )  return coreBadAlloc();
-        else  return true;
+        if ( !astNewGame(&core) )
+            return coreBadAlloc();
+        else
+            return true;
     }
 
     // handle key events
-    if ( !astHandleInput(core) )  return coreBadAlloc();
+    if ( !astHandleInput(core) )
+        return coreBadAlloc();
 
     // move ship
     ship->addDir( ship->rz );
@@ -194,7 +206,8 @@ bool astUpdateState( coreInfo &core )
         entity *sprite = *i;
 
         // count number of asteroids
-        if ( sprite->isAsteroid )  ++astCount;
+        if ( sprite->isAsteroid )
+            ++astCount;
 
         // check if entity is exploding
         if ( sprite->scale > 1.0f )
@@ -214,7 +227,8 @@ bool astUpdateState( coreInfo &core )
                     if ( sprite->points.pBegin != core.models.stroidTiny.pBegin )
                     {
                         bool bResult = astSpawnStroids( core, &sprite->points, sprite->pos );
-                        if ( !bResult )  return coreBadAlloc();
+                        if ( !bResult )
+                            return coreBadAlloc();
                     }
 
                     // set "children spawned" flag
@@ -241,7 +255,8 @@ bool astUpdateState( coreInfo &core )
     if ( !astCount )
     {
         ++core.iGameLevel;
-        if ( !astNewGame(&core) )  return coreBadAlloc();
+        if ( !astNewGame(&core) )
+            return coreBadAlloc();
     }
 
     // make stars twinkle :D
@@ -260,20 +275,25 @@ bool astNewGame( coreInfo *core )
 
     // ship entity must always be first
     entity *player = new entity( core->models.ship, 0.0f, 0.0f );
-    if ( !player )  return false;
+    if ( !player )
+        return false;
     bool bResult = core->sprites.push_back( player );
-    if ( !bResult )  return false;
+    if ( !bResult )
+        return false;
 
     // add starfield
     entity *starfield = new entity( core->models.stars, 0.0f, 0.0f );
-    if ( !starfield )  return false;
+    if ( !starfield )
+        return false;
     starfield->canCollide = false;
     bResult = core->sprites.push_back( starfield );
-    if ( !bResult )  return false;
+    if ( !bResult )
+        return false;
 
     // populate space
     bResult = astSpawnStroids( *core, 0, player->pos );
-    if ( !bResult )  return false;
+    if ( !bResult )
+        return false;
 
     return true;
 }
@@ -289,24 +309,32 @@ bool astNewGame( coreInfo *core )
 
     // wrap left/right at any depth - cartesian offset means
     // left extremity is -320.0f, and not 0.0f
-    if ( sprite.pos.x < -xlimit )  sprite.pos.x += xlimit*2;
-        else if ( sprite.pos.x >= xlimit )  sprite.pos.x -= xlimit*2;
+    if ( sprite.pos.x < -xlimit )
+        sprite.pos.x += xlimit*2;
+    else if ( sprite.pos.x >= xlimit )
+        sprite.pos.x -= xlimit*2;
 
     // wrap top/bottom
-    if ( sprite.pos.y < -ylimit )  sprite.pos.y += ylimit*2;
-        else if ( sprite.pos.y >= ylimit )  sprite.pos.y -= ylimit*2;
+    if ( sprite.pos.y < -ylimit )
+        sprite.pos.y += ylimit*2;
+    else if ( sprite.pos.y >= ylimit )
+        sprite.pos.y -= ylimit*2;
 }*/
 
 void astWrapSprite( coreInfo &core, entity &sprite )
 {
     // wrap left/right at any depth - cartesian offset means
     // left extremity is -320.0f, and not 0.0f
-    if ( sprite.pos.x < -core.fSWidth )  sprite.pos.x += core.fSWidth*2;
-        else if ( sprite.pos.x >= core.fSWidth )  sprite.pos.x -= core.fSWidth*2;
+    if ( sprite.pos.x < -core.fSWidth )
+        sprite.pos.x += core.fSWidth*2;
+    else if ( sprite.pos.x >= core.fSWidth )
+        sprite.pos.x -= core.fSWidth*2;
 
     // wrap top/bottom
-    if ( sprite.pos.y < -core.fSHeight )  sprite.pos.y += core.fSHeight*2;
-        else if ( sprite.pos.y >= core.fSHeight )  sprite.pos.y -= core.fSHeight*2;
+    if ( sprite.pos.y < -core.fSHeight )
+        sprite.pos.y += core.fSHeight*2;
+    else if ( sprite.pos.y >= core.fSHeight )
+        sprite.pos.y -= core.fSHeight*2;
 }
 
 // ------------------------------------------------------------------
@@ -355,11 +383,15 @@ void entity::addDir( float angle )
 
     // cap speed. fixes upb's crash bug
     float max = 3.0f;
-    if ( pos.r > max ) pos.r = max;
-    else if ( pos.r < -max )  pos.r = -max;
+    if ( pos.r > max )
+        pos.r = max;
+    else if ( pos.r < -max )
+        pos.r = -max;
 
-    if ( pos.g > max ) pos.g = max;
-    else if ( pos.g < -max )  pos.g = -max;
+    if ( pos.g > max )
+        pos.g = max;
+    else if ( pos.g < -max )
+        pos.g = -max;
 
     speed = 0.0f;
 }
