@@ -16,9 +16,13 @@ int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
 {
     // query user about screen mode
     bool bFullScreen = sys::userQuery( _T("Would you like to play in fullscreen mode?") );
+    bool bmouse = true;
+        
+    if(bFullScreen)
+        bmouse = sys::userQuery( _T("Would you like to play with mouse?") );
 
     // create video buffer in a desktop window
-    output.Init( _T("dila/2006"), 1280, 720, bFullScreen );
+    output.Init( _T("dila/2006"), 1280, 720, bFullScreen, bmouse);
     if ( !output )
         return 0;
 

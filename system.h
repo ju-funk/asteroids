@@ -21,7 +21,7 @@ public:
     bool operator !( void ) { return !wasInitialized; }
 
     // constructor, cleanup proceedure
-    void Init( const TCHAR *szCaption, int width, int height, bool fullScreen );
+    void Init( const TCHAR *szCaption, int width, int height, bool fullScreen, bool mouse );
     ~screen( void ) { cleanup(); }
     void cleanup( void );
 
@@ -42,7 +42,7 @@ public:
     int getWidth( void ) { return iWidth; }
     int getHeight( void ) { return iHeight; }
 
-    bool GetMousePos(POINT &mousePos);
+    bool GetMousePos(POINT &mousePos, int *&wheel);
 
 private:
     // main init function
@@ -53,6 +53,8 @@ private:
 
     // message handling proceedure
     static LRESULT CALLBACK winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+    static int StWheel;
+    bool EnaMouse;
 
     // window members
     HINSTANCE hInstance;

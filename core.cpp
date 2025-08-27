@@ -149,7 +149,8 @@ int coreMainThread( sys::screen *output )
         while ( !bHasTermSignal )
         {
             // set game vars and redraw frame, break on failure
-            if ( !astUpdateState(core) )  break;
+            if ( !astUpdateState(core) )
+                break;
             coreRenderView( core );
 
             // blit frame and clear backbuffer

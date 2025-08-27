@@ -71,6 +71,9 @@ unsigned long sys::getSeed( void )
     return (iHigh<<16) | iLow;
 }
 
+
+int sys::screen::StWheel = 0;
+
 // ------------------------------------------------------------------
 // screen object: winDlgProc - static event handling proceedure
 // ------------------------------------------------------------------
@@ -78,6 +81,16 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
 {
     switch( uMsg )
     {
+
+    case WM_MOUSEWHEEL:
+    {
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam); // Wheel
+        if (delta > 0)
+            StWheel |= 1; // up
+        else if (delta < 0)
+            StWheel |= 2; // down
+    }
+
     case WM_KEYDOWN:
         if ( wParam != VK_ESCAPE )
             break;
@@ -114,11 +127,13 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
 // ------------------------------------------------------------------
 // screen object: constructor - create window and set fullscreen
 // ------------------------------------------------------------------
-void sys::screen::Init( const TCHAR *szCaption, int width, int height, bool fullScreen )
+void sys::screen::Init( const TCHAR *szCaption, int width, int height, bool fullScreen, bool mouse)
 {
     wasInitialized = false;
     iWidth  = width;
     iHeight = height;
+    StWheel = 0;
+    EnaMouse = mouse;
 
     // change display mode if required
     if ( fullScreen )
@@ -386,7 +401,7 @@ bool sys::screen::toggleFullScreen( void )
             return false;
 
         // hide system cursor
-        ShowCursor( false );
+        ShowCursor(EnaMouse);
 
         // change success, set status flag
         hasFullScreen = true;
@@ -437,9 +452,9 @@ void sys::screen::setVisible( bool state )
 }
 
 // mouse-pos handling
-bool sys::screen::GetMousePos(POINT& mousePos)
+bool sys::screen::GetMousePos(POINT& mousePos, int *&wheel)
 {
-    bool ret = true;
+    bool ret = EnaMouse;
 
     GetCursorPos(&mousePos);
     ScreenToClient(hWnd, &mousePos);
@@ -447,6 +462,8 @@ bool sys::screen::GetMousePos(POINT& mousePos)
     if (mousePos.x < 0 || mousePos.y < 0 ||
         mousePos.x > iWidth || mousePos.y > iHeight)
         ret = false;
+
+    wheel = &StWheel;
 
     return ret;
 }
