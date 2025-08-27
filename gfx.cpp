@@ -23,7 +23,7 @@ inline unsigned long int gfxRGB( float r, float g, float b )
 void gfxDrawLoader( coreInfo &info, float &ticker )
 {
     ticker += 0.4f;
-    float twopi = 2 * M_PI;
+    float twopi = M_2PI;
 
     if ( ticker > twopi )  ticker -= twopi;
 

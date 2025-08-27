@@ -7,25 +7,36 @@ inline bool astHandleInput( coreInfo &core )
 {
     // a pointer to our spaceship
     entity *spaceship = core.sprites.begin()->value;
+    int *wheel;
 
-    int ff = 1;
-    POINT mousePos; ;
-    if(!output.GetMousePos(mousePos))
-        ff = 2;
+    POINT mousePos;
 
-    if ( GetAsyncKeyState(VK_SPACE) & 1 || GetAsyncKeyState(VK_LBUTTON) & ff)   // VK_MBUTTON
-        if ( !astFireBullet(core) )  
-            return false;
-
-    if (ff == 1)
+    if (output.GetMousePos(mousePos, wheel))
     {
-        mousePos.y -= core.iCHeight;
-        mousePos.x -= core.iCWidth;
+        mousePos.y -= core.iCHeight + static_cast<long>(spaceship->pos.y * core.fScaleY);
+        mousePos.x -= core.iCWidth + static_cast<long>(spaceship->pos.x * core.fScaleX);
 
         spaceship->rz = (float)atan2(mousePos.x, -mousePos.y);
         if (spaceship->rz < 0)
-            spaceship->rz += 2 * M_PI; // Bereich 0...2Pi
+            spaceship->rz += M_2PI; // Bereich 0...2Pi
+
+        if ( GetAsyncKeyState(VK_LBUTTON) & 1)   // VK_MBUTTON
+           astFireBullet(core);
+
+        if ((*wheel & 1) == 1)
+        {
+            *wheel &= ~1;
+            spaceship->speed += 0.01f;
+        }
+        if ((*wheel & 2) == 2)
+        {
+            *wheel &= ~2;
+            spaceship->speed -= 0.01f;
+        }
     }
+
+    if ( GetAsyncKeyState(VK_SPACE) & 1)
+        astFireBullet(core);
 
     if ( GetAsyncKeyState(VK_UP) )
         spaceship->speed += 0.01f;
