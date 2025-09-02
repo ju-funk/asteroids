@@ -33,7 +33,9 @@ public:
 
 private:
     // 3x3 linear array
-    T mbuf[9];
+    static constexpr int siy = 3, six = 3;
+    static constexpr int lixy=siy*six;
+    T mbuf[lixy];
 };
 
 // ------------------------------------------------------------------
@@ -43,7 +45,7 @@ template <class T>
 inline void array::matrix<T>::operator =( const matrix &src )
 {
     const T *pSrc = src.mbuf;
-    T *pDest = mbuf, *pEnd = pDest + 9;
+    T *pDest = mbuf, *pEnd = pDest + lixy;
 
     // copy each item to destination array
     while ( pDest != pEnd )  *pDest++ = *pSrc++;
@@ -60,23 +62,24 @@ inline array::matrix<T> array::matrix<T>::operator *( const matrix &in )
     // my optimized matrix multiplication
     // for(i)for(j)for(k) m[i][j] += a[i][k]*b[k][j];
     T *mp = out.mbuf;
-    const T *ap = mbuf, *ape = ap+9;
-    for ( ; ap != ape; ap+=3 )
+    const T *ap = mbuf, *ape = ap + lixy;
+    for ( ; ap != ape; ap+=siy )
     {
-        const T *bp = in.mbuf, *bpe = bp+3;
+        const T *bp = in.mbuf, *bpe = bp+six;
         for ( ; bp != bpe; ++mp, ++bp )
         {
             *mp = 0.0f;
-            const T *atp = ap, *btp = bp;
+            const T *atp = ap,
+                *btp = bp;
 
             *mp += *atp * *btp;
-            btp += 3; ++atp;
+            btp += six; ++atp;
 
             *mp += *atp * *btp;
-            btp += 3; ++atp;
+            btp += six; ++atp;
 
             *mp += *atp * *btp;
-            btp += 3; ++atp;
+            btp += six; ++atp;
         }
     }
 
@@ -94,9 +97,9 @@ inline void array::matrix<T>::reset( void )
     // [ 0  1  0 ]
     // [ 0  0  1 ]
     T *pm = mbuf;
-    for ( int i = 0; i < 3; ++i )
+    for ( int i = 0; i < siy; ++i )
     {
-        for ( int j = 0; j < 3; ++j, ++pm )
+        for ( int j = 0; j < six; ++j, ++pm )
         {
             if ( i == j )
                 *pm = 1.0f;
@@ -312,8 +315,6 @@ public:
     void remove( iterator &i );
     bool push_back( T value );
     T pop_back( void );
-    bool push_front( T value );
-    T pop_front( void );
 
     // member accessors
     size_type size( void ) { return nodeCount; }
@@ -398,52 +399,6 @@ void array::list<T>::remove( iterator &i )
     --nodeCount;
 }
 
-// ------------------------------------------------------------------
-// list object: push_front - add a new node to the front of the list
-// ------------------------------------------------------------------
-template <class T>
-bool array::list<T>::push_front( T value )
-{
-    // allocate new node, verify success
-    pBegin->pPrev = new node;
-    if ( !pBegin->pPrev ) return false;
-
-    // update node pointers
-    pBegin->pPrev->pNext = pBegin;
-    pBegin->pPrev->pPrev = 0;
-    pBegin = pBegin->pPrev;
-
-    // set value in current node
-    pBegin->value = value;
-
-    // incriment node count, return success
-    nodeCount += 1;
-
-    return true;
-}
-
-// ------------------------------------------------------------------
-// list object: pop_front - remove first node, and return it's value
-// ------------------------------------------------------------------
-template <class T>
-T array::list<T>::pop_front( void )
-{
-    // store the value in the first node
-    T original = pBegin->value;
-
-    // set pointer to next node
-    pBegin = pBegin->pNext;
-
-    // deallocate first node
-    delete pBegin->pPrev;
-    pBegin->pPrev = 0;
-
-    // decriment node counter
-    nodeCount -= 1;
-
-    // return nodes value
-    return original;
-}
 
 // ------------------------------------------------------------------
 // list object: push_back - add a new node to the back of the list
