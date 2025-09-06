@@ -156,7 +156,6 @@ public:
     // object control
     void init( T value );
     void clear( void ) { init( 0 ); }
-    bool grow( size_type extra );
 
     // member accessors
     size_type size( void ) { return blockSize; }
@@ -216,36 +215,6 @@ array::block<T>::block( list<T> &source )
     wasInitialized = true;
 }
 
-// ------------------------------------------------------------------
-// block object: grow - allows allocation of extra space
-// ------------------------------------------------------------------
-template <class T>
-bool array::block<T>::grow( size_type extra )
-{
-    size_type newSize = blockSize + extra;
-
-    // allocate new memory block
-    iterator pNewBegin = new T[newSize];
-    if ( !pNewBegin )  return false;
-
-    // create new end pointer
-    iterator pNewEnd = pNewBegin + newSize;
-
-    // copy old data to new array
-    iterator i = begin(), j = pNewBegin;
-    for ( ; i != end(); ++i, ++j )  *j = *i;
-
-    // deallocate old array
-    delete [] pBegin;
-
-    // update class members
-    blockSize = newSize;
-    pBegin = pNewBegin;
-    pEnd = pNewEnd;
-
-    // return success
-    return true;
-}
 
 // ------------------------------------------------------------------
 // block object: init - initialize block to value

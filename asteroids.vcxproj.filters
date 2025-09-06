@@ -46,6 +46,9 @@
     <ClInclude Include="main.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="array.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt">
