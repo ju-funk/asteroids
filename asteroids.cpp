@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-inline bool astHandleInput( coreInfo &core )
+inline void astHandleInput( coreInfo &core )
 {
     // a pointer to our spaceship
     entity *spaceship = core.sprites.begin()->value;
@@ -20,8 +20,14 @@ inline bool astHandleInput( coreInfo &core )
         if (spaceship->rz < 0)
             spaceship->rz += M_2PI; // Bereich 0...2Pi
 
-        if ( GetAsyncKeyState(VK_LBUTTON) & 1)   // VK_MBUTTON
+        if ( GetAsyncKeyState(VK_LBUTTON) & 1)
            astFireBullet(core);
+
+        if (GetAsyncKeyState(VK_RBUTTON))
+            spaceship->pos.g = spaceship->speed = spaceship->pos.r = 0.0f;
+
+        //if ( GetAsyncKeyState(VK_MBUTTON)) 
+            ; // shild
 
         if ((*wheel & 1) == 1)
         {
@@ -47,10 +53,8 @@ inline bool astHandleInput( coreInfo &core )
     if ( GetAsyncKeyState(VK_RIGHT) )
         spaceship->rz += 0.1f;
 
-    if ( GetAsyncKeyState(VK_CONTROL) || GetAsyncKeyState(VK_RBUTTON) )
+    if ( GetAsyncKeyState(VK_CONTROL) )
         spaceship->pos.g = spaceship->speed = spaceship->pos.r = 0.0f;
-
-    return true;
 }
 
 // ------------------------------------------------------------------
@@ -181,7 +185,7 @@ bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
     }
     // else model is tiny asteroid
 
-    float posrad = 2*M_PI*frand(), posinc = 2*M_PI / iSpawnCount;
+    float posrad = M_2PI*frand(), posinc = M_2PI / iSpawnCount;
     for ( int i = 0; i < iSpawnCount; posrad+=posinc, ++i )
     {
         // prevent collision between asteroids
@@ -211,6 +215,9 @@ bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
 // ------------------------------------------------------------------
 bool astUpdateState( coreInfo &core )
 {
+    // handle key events
+    astHandleInput(core);
+
     // check for game over
     entity *ship = core.sprites.begin()->value;
     if ( !ship->health )
@@ -220,10 +227,6 @@ bool astUpdateState( coreInfo &core )
         else
             return true;
     }
-
-    // handle key events
-    if ( !astHandleInput(core) )
-        return coreBadAlloc();
 
     // move ship
     ship->addDir( ship->rz );

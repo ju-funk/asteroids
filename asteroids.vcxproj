@@ -26,6 +26,7 @@
     <ClCompile Include="system.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="array.h" />
     <ClInclude Include="asteroids.h" />
     <ClInclude Include="core.h" />
     <ClInclude Include="gfx.h" />

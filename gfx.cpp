@@ -80,14 +80,13 @@ bool gfxGenShip( array::list<vertex> &output, float detail )
 bool gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour )
 {
     vertex pt;
-    float twopi = 2 * M_PI;
     float radinc = M_PI / detail;
     // for each point arround a semi-circle
     for ( float radi = 0.0f; radi < M_PI; radi += radinc )
     {
         // for each point arround the circumference at that point
-        float circ = twopi * fabsf(cosf(radi)) * detail, centinc = twopi / circ;
-        for ( float radj = 0.0f; radj < twopi; radj += centinc )
+        float circ = M_2PI * fabsf(cosf(radi)) * detail, centinc = M_2PI / circ;
+        for ( float radj = 0.0f; radj < M_2PI; radj += centinc )
         {
             // random radius displacement
             float roffset = (0.5f-frand())/5;
