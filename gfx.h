@@ -7,6 +7,36 @@ struct vertex
 {
     float x, y, z;
     float r, g, b;
+
+    template<typename T>
+    inline vertex operator +(array::matrix<T>& in)
+    {
+        // rotate vertex using model matrix
+        vertex pv = *this;
+        pv.x = x * in[0] + y * in[1] + z * in[2];
+        pv.y = x * in[3] + y * in[4] + z * in[5];
+        pv.z = x * in[6] + y * in[7] + z * in[8];
+
+        return pv;
+    }
+    
+    inline vertex operator *=(float& in)
+    {
+        x *= in;
+        y *= in;
+        z *= in;
+
+        return *this;
+    }
+
+    inline vertex operator +=(vertex& in)
+    {
+        x += in.x;
+        y += in.y;
+        z += in.z;
+
+        return *this;
+    }
 };
 
 // model points into main vertex array
