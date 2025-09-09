@@ -24,7 +24,7 @@ inline void astHandleInput( coreInfo &core )
            astFireBullet(core);
 
         if (GetAsyncKeyState(VK_RBUTTON))
-            spaceship->pos.g = spaceship->speed = spaceship->pos.r = 0.0f;
+            spaceship->pos.g = spaceship->pos.r = 0.0f;
 
         //if ( GetAsyncKeyState(VK_MBUTTON)) 
             ; // shild
@@ -32,12 +32,12 @@ inline void astHandleInput( coreInfo &core )
         if ((*wheel & 1) == 1)
         {
             *wheel &= ~1;
-            spaceship->speed += 0.01f;
+            spaceship->speed = 0.01f;
         }
         if ((*wheel & 2) == 2)
         {
             *wheel &= ~2;
-            spaceship->speed -= 0.01f;
+            spaceship->speed = -0.01f;
         }
     }
 
@@ -45,16 +45,16 @@ inline void astHandleInput( coreInfo &core )
         astFireBullet(core);
 
     if ( GetAsyncKeyState(VK_UP) )
-        spaceship->speed += 0.01f;
+        spaceship->speed = 0.01f;
     if ( GetAsyncKeyState(VK_DOWN) )
-        spaceship->speed -= 0.01f;
+        spaceship->speed = -0.01f;
     if ( GetAsyncKeyState(VK_LEFT) )
         spaceship->rz -= 0.1f;
     if ( GetAsyncKeyState(VK_RIGHT) )
         spaceship->rz += 0.1f;
 
     if ( GetAsyncKeyState(VK_CONTROL) )
-        spaceship->pos.g = spaceship->speed = spaceship->pos.r = 0.0f;
+        spaceship->pos.g = spaceship->pos.r = 0.0f;
 }
 
 // ------------------------------------------------------------------
