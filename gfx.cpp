@@ -53,24 +53,25 @@ void gfxDrawLoader( coreInfo &info, float &ticker )
 bool gfxGenShip( array::list<vertex> &output, float detail )
 {
     vertex pt;
+    pt.z = 0.0f;
     for ( float i = 0.0f; i <= 1.0f; i+=detail )
     {
-        pt.x = i;
-        pt.y = -0.6f + i;
-        pt.z = 0.0f;
-        pt.r = pt.g = pt.b = 1.0f;
+        pt.x = i;                                               /*          / \ < this */
+        pt.y = -0.6f + i;                                       /*          --         */
+        pt.r = 1.0f; pt.g = 0.0f; pt.b = 0.0f;
         if ( !output.push_back(pt) )
             return false;
-        pt.x = -pt.x;
-        if ( !output.push_back(pt) )
+        pt.x = -pt.x;                                           /*   this > / \        */
+        if ( !output.push_back(pt) )                            /*          --         */
             return false;
 
-        pt.x = i;
-        pt.y = 0.4f;
+        pt.x = i;                                               /*          / \        */
+        pt.y = 0.4f;                                            /*          --  < this */
+        pt.r = 0.0f; pt.g = 1.0f; pt.b = 0.0f;
         if ( !output.push_back(pt) )
             return false;
-        pt.x = -pt.x;
-        if ( !output.push_back(pt) )
+        pt.x = -pt.x;                                           /*          / \        */
+        if ( !output.push_back(pt) )                            /*   this > --         */
             return false;
     }
 
