@@ -7,7 +7,6 @@ struct coreInfo
 {
     // device settings
     unsigned long int *pBuffer;
-    float *pFrame, *pFrameEnd;
     float fScaleX, fScaleY;
     float fSWidth, fSHeight;
     float fZOrigin;

@@ -91,19 +91,9 @@ inline void coreRenderView( coreInfo &core )
                 offset -= core.iSize;
             }
 
-            // test depth in frame buffer
-            float *pos = &core.pFrame[ offset ];
-            if ( *pos > pv.z )
-            {
-                *pos = pv.z;
-                core.pBuffer[offset] = gfxRGB( pv.r, pv.g, pv.b );
-            }
+            core.pBuffer[offset] = gfxRGB( pv.r, pv.g, pv.b );
         }
     }
-
-    // reset frame buffer
-    for ( float *i = core.pFrame; i != core.pFrameEnd; ++i )
-        *i = 1.0f;
 }
 
 int coreMainThread( sys::screen *output )
@@ -121,7 +111,6 @@ int coreMainThread( sys::screen *output )
     core.fSWidth = core.iCWidth / core.fScaleX;
     core.fSHeight = core.iCHeight / core.fScaleY;
     core.points = 0;
-    core.pFrame = 0;
 
     // check if load succeeded
     if ( !coreLoaderThread(&core) )
@@ -168,7 +157,6 @@ int coreMainThread( sys::screen *output )
 
     // cleanup
     delete core.points;
-    delete [] core.pFrame;
 
     // signal thread has finished
     output->signalQuit();
@@ -184,12 +172,6 @@ int coreLoaderThread( coreInfo *core )
         return coreBadAlloc();
     array::list<vertex>::size_type nlast;
     coreInfo::modPtrs &models = core->models;
-
-    // allocate frame buffer - not used for loading animation
-    core->pFrame = new float[ core->iSize ];
-    if ( !core->pFrame )
-        return coreBadAlloc();
-    core->pFrameEnd = core->pFrame + core->iSize;
 
     // seed random number generator
     srand( sys::getSeed() );
