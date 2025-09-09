@@ -39,22 +39,13 @@ inline void coreRenderView( coreInfo &core )
         for ( ; j != sprite->points.pEnd; ++j )
         {
             // temporary vertex to hold rotated point. copy colours
-            vertex pv = { 0.0f, 0.0f, 0.0f, j->r, j->g, j->b };
-
-            // rotate vertex using model matrix
-            pv.x = j->x*m[0] + j->y*m[1] + j->z*m[2];
-            pv.y = j->x*m[3] + j->y*m[4] + j->z*m[5];
-            pv.z = j->x*m[6] + j->y*m[7] + j->z*m[8];
+            vertex pv = *j + m;
 
             // scale sprite, for explosion effect
-            pv.x *= sprite->scale;
-            pv.y *= sprite->scale;
-            pv.z *= sprite->scale;
+            pv *= sprite->scale;
 
             // offset vertex with sprite position
-            pv.x += sprite->pos.x;
-            pv.y += sprite->pos.y;
-            pv.z += sprite->pos.z;
+            pv += sprite->pos;
 
             // adjust z position and scale
             //pv.z = core.fZOrigin + pv.z;

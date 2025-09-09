@@ -44,11 +44,7 @@ private:
 template <class T>
 inline void array::matrix<T>::operator =( const matrix &src )
 {
-    const T *pSrc = src.mbuf;
-    T *pDest = mbuf, *pEnd = pDest + lixy;
-
-    // copy each item to destination array
-    while ( pDest != pEnd )  *pDest++ = *pSrc++;
+   memcpy(&mbuf, &src.mbuf, sizeof(mbuf));
 }
 
 // ------------------------------------------------------------------
