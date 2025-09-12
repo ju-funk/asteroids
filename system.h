@@ -3,7 +3,6 @@
 namespace sys
 {
     class screen;
-    class thread;
 
     // native api wrappers
     void userNotice( const TCHAR *szMessage, bool isFatal );
@@ -80,35 +79,6 @@ private:
     // full screen memebrs
     bool hasFullScreen;
     DEVMODE dmOriginalConfig;
-
-    // initialized success flag
-    bool wasInitialized;
-};
-
-// ------------------------------------------------------------------
-// thread object
-// ------------------------------------------------------------------
-class sys::thread
-{
-public:
-    // member operators
-    bool operator !( void ) { return !wasInitialized; }
-
-    // ctor/dtor
-    thread( void *threadProc, bool startPaused, void *threadInfo );
-    ~thread( void );
-
-    // thread state control
-    void waitForSignal( void );
-
-private:
-    // thread handle and id
-    HANDLE hThread;
-    DWORD dwThread;
-
-    // thread running state, pause count
-    bool bThreadState;
-    DWORD dwPauseCount;
 
     // initialized success flag
     bool wasInitialized;
