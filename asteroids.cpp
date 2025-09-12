@@ -7,6 +7,9 @@ inline void astHandleInput( coreInfo &core )
 {
     // a pointer to our spaceship
     entity *spaceship = core.sprites.begin()->value;
+    if(spaceship->health == 0)
+        return;
+
     int *wheel;
 
     POINT mousePos;
@@ -155,6 +158,8 @@ bool astFireBullet( coreInfo &core )
     if ( !core.sprites.push_back(bullet) )
         return false;
 
+    ++core.Fires;
+
     return true;
 }
 
@@ -219,25 +224,30 @@ bool astUpdateState( coreInfo &core )
     astHandleInput(core);
 
     // check for game over
-    entity *ship = core.sprites.begin()->value;
-    if ( !ship->health )
+    array::list<entity*>::iterator i = core.sprites.begin();
+    entity *sprite = *i;
+    if ( !sprite->health)
     {
-        if ( !astNewGame(&core) )
-            return coreBadAlloc();
+        if (sprite->scale > 5.0f)
+        {
+            if (!astNewGame(core, true))
+                return coreBadAlloc();
+            else
+                return true;
+        }
         else
-            return true;
+            sprite->scale += 0.02f;
     }
 
     // move ship
-    ship->addDir( ship->rz );
-    ship->addPos();
+    sprite->addDir(sprite->rz );
+    sprite->addPos();
 
     // process all other sprites
     int astCount = 0;
-    array::list<entity*>::iterator i = core.sprites.begin();
     for ( ++i, ++i; i != core.sprites.end(); ++i )
     {
-        entity *sprite = *i;
+        sprite = *i;
 
         // count number of asteroids
         if ( sprite->isAsteroid )
@@ -249,6 +259,8 @@ bool astUpdateState( coreInfo &core )
             if ( sprite->scale > 5.0f )
             {
                 // entity exploded, remove from list
+                if(sprite->isAsteroid)
+                    core.Score += 10;
                 delete sprite;
                 core.sprites.remove( i );
             }
@@ -288,8 +300,7 @@ bool astUpdateState( coreInfo &core )
     // if no asteroids left, level up!
     if ( !astCount )
     {
-        ++core.iGameLevel;
-        if ( !astNewGame(&core) )
+        if ( !astNewGame(core, false) )
             return coreBadAlloc();
     }
 
@@ -302,31 +313,59 @@ bool astUpdateState( coreInfo &core )
 // ------------------------------------------------------------------
 // reset game. add asteroids, reset health points .etc
 // ------------------------------------------------------------------
-bool astNewGame( coreInfo *core )
+bool astNewGame( coreInfo &core, bool newgame )
 {
     // get rid of any bullets
-    astDeallocSprites( *core );
+
+    bool restart = (core.Ships <= 1 && newgame);
+    bool levelup = (core.Ships > 0 && !newgame);
+
+    if (restart)
+    {
+        core.iGameLevel = 2;
+        core.Ships = 3;
+        core.Fires = 0;
+        core.Score = 0;
+        gfxDrawLoader(core, 3);
+    }
+    else if (levelup)
+    {
+        ++core.iGameLevel;
+        gfxDrawLoader(core, 2);
+    }
+    else // new ship
+    {
+        --core.Ships;
+        gfxDrawLoader(core, 1);
+        entity* ship = core.sprites.begin()->value;
+        entity nship(core.models.ship, 0.0f, 0.0f);
+        *ship = nship;
+
+        return true;
+    }
+
+    astDeallocSprites(core);
 
     // ship entity must always be first
-    entity *player = new entity( core->models.ship, 0.0f, 0.0f );
-    if ( !player )
+    entity* player = new entity(core.models.ship, 0.0f, 0.0f);
+    if (!player)
         return false;
-    bool bResult = core->sprites.push_back( player );
-    if ( !bResult )
+    bool bResult = core.sprites.push_back(player);
+    if (!bResult)
         return false;
 
     // add starfield
-    entity *starfield = new entity( core->models.stars, 0.0f, 0.0f );
-    if ( !starfield )
+    entity* starfield = new entity(core.models.stars, 0.0f, 0.0f);
+    if (!starfield)
         return false;
     starfield->canCollide = false;
-    bResult = core->sprites.push_back( starfield );
-    if ( !bResult )
+    bResult = core.sprites.push_back(starfield);
+    if (!bResult)
         return false;
 
     // populate space
-    bResult = astSpawnStroids( *core, 0, player->pos );
-    if ( !bResult )
+    bResult = astSpawnStroids(core, 0, player->pos);
+    if (!bResult)
         return false;
 
     return true;

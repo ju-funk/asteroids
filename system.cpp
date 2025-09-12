@@ -28,13 +28,10 @@ void sys::userNotice( const TCHAR *szMessage, bool isFatal )
 bool sys::userQuery( const TCHAR *szMessage )
 {
     // get user response
-    int iResult = MessageBox( 0, szMessage, _T("dila/2006"), MB_YESNO|MB_TOPMOST|MB_ICONQUESTION );
+    int iResult = MessageBox( 0, szMessage, output.GetTitle(), MB_YESNO | MB_TOPMOST | MB_ICONQUESTION);
 
     // return user selection
-    if ( iResult == IDYES )
-        return true;
-    else
-        return false;
+    return iResult == IDYES;
 }
 
 // ------------------------------------------------------------------
@@ -127,7 +124,7 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
 // ------------------------------------------------------------------
 // screen object: constructor - create window and set fullscreen
 // ------------------------------------------------------------------
-void sys::screen::Init( const TCHAR *szCaption, int width, int height, bool fullScreen, bool mouse)
+void sys::screen::Create(int width, int height, bool fullScreen, bool mouse)
 {
     wasInitialized = false;
     iWidth  = width;
@@ -152,7 +149,7 @@ void sys::screen::Init( const TCHAR *szCaption, int width, int height, bool full
         return;
 
     // set caption text
-    setCaption( szCaption );
+    setCaption(pcTitle);
 
     // set success flag
     wasInitialized = true;
@@ -168,8 +165,10 @@ void sys::screen::cleanup( void )
         toggleFullScreen();
 
     // cleanup gdi buffer
+    SelectObject( hVideoDC, hOldFontObj);
     SelectObject( hVideoDC, hOldObject );
     DeleteObject( hBitmap );
+    DeleteObject(hOldFontObj);
     DeleteDC( hVideoDC );
 
     // cleanup window
@@ -291,7 +290,7 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     bVisibleState = false;
 
     // retrieve window device context
-    hDC = GetDC( hWnd );
+    hDC = ::GetDC( hWnd );
 
     if ( !hDC )
     {
@@ -318,6 +317,16 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
         return false;
     }
 
+    HFONT hFont = CreateFont(24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+        ANSI_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, _T("Arial"));
+    hOldFontObj = SelectObject(hVideoDC, hFont);
+
+    SetTextColor(hVideoDC, RGB(255, 255, 0));
+    SetBkColor(hVideoDC, RGB(0, 0, 0));
+    SetBkMode(hVideoDC, TRANSPARENT);
+    SetTextAlign(hVideoDC, TA_CENTER);
+
+
     // fill bitmap info struct
     BITMAPINFO lpBmpInfo = { 0 };
     lpBmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -334,6 +343,7 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     // verify object was created
     if ( !hBitmap )
     {
+        DeleteObject(hOldFontObj);
         DeleteDC( hVideoDC );
         ReleaseDC( hWnd, hDC );
         DestroyWindow( hWnd );
@@ -353,6 +363,7 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     if ( !hOldObject )
     {
         DeleteObject( hBitmap );
+        DeleteObject(hOldFontObj);
         DeleteDC( hVideoDC );
         ReleaseDC( hWnd, hDC );
         DestroyWindow( hWnd );

@@ -20,7 +20,8 @@ public:
     bool operator !( void ) { return !wasInitialized; }
 
     // constructor, cleanup proceedure
-    void Init( const TCHAR *szCaption, int width, int height, bool fullScreen, bool mouse );
+    screen( const TCHAR *szCaption) {pcTitle = szCaption;}
+    void Create(int width, int height, bool fullScreen, bool mouse );
     ~screen( void ) { cleanup(); }
     void cleanup( void );
 
@@ -40,6 +41,9 @@ public:
     unsigned long *getScreenBuffer( void ){ return pBitmap; }
     int getWidth( void ) { return iWidth; }
     int getHeight( void ) { return iHeight; }
+
+    HDC Get_DC() { return hVideoDC; }
+    const TCHAR *GetTitle() {return pcTitle; }
 
     bool GetMousePos(POINT &mousePos, int *&wheel);
 
@@ -65,6 +69,7 @@ private:
     HDC hVideoDC;
     HBITMAP hBitmap;
     HGDIOBJ hOldObject;
+    HGDIOBJ hOldFontObj;
     unsigned long *pBitmap;
     unsigned long *pBmpEnd;
     int iBmpSize;
@@ -73,6 +78,7 @@ private:
 
     RECT rSize;
     TCHAR *szClass;
+    const TCHAR *pcTitle;
     bool bVisibleState;
     int iExitCode;
 

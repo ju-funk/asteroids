@@ -4,7 +4,7 @@
 
 // global running status flags
 bool bHasTermSignal = false;
-sys::screen output;
+sys::screen output(_T("dila & ju-funk / 2025"));
 
 
 #ifdef  UNICODE
@@ -23,7 +23,7 @@ int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
         bmouse = sys::userQuery( _T("Would you like to play with mouse?") );
 
     // create video buffer in a desktop window
-    output.Init( _T("dila/2006"), 1280, 720, bFullScreen, bmouse);
+    output.Create(1280, 720, bFullScreen, bmouse);
     if ( !output )
         return 0;
 
