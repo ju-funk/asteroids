@@ -13,6 +13,7 @@ struct coreInfo
     int iWidth, iHeight;
     int iCWidth, iCHeight;
     int iSize;
+    HDC hDC;
 
     // vertex array
     array::block<vertex> *points;
@@ -31,19 +32,21 @@ struct coreInfo
 
     // other game specific vars
     int iGameLevel;
+    DWORD Score, Fires;
+    int   Ships;
 };
 
 // prototypes called by core.cpp
-void gfxDrawLoader( coreInfo &info, float &ticker );
+void gfxDrawLoader( coreInfo &info, int loop );
 void gfxBlinkStars( coreInfo &core );
 void astWrapSprite( coreInfo &core, entity &sprite );
 bool astFireBullet( coreInfo &core );
-bool astNewGame( coreInfo *core );
+bool astNewGame( coreInfo &core, bool newgame );
 bool astUpdateState( coreInfo &core );
 void astDeallocSprites( coreInfo &core );
 void astCheckCollision( coreInfo &core, entity *enta, entity *entb );
 
 // thread entry proceedures in core.cpp
-int coreMainThread( sys::screen *output );
-int coreLoaderThread( coreInfo *core );
+int coreMainThread( );
+int coreLoaderThread( coreInfo &core );
 bool coreBadAlloc( void );

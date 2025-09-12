@@ -20,33 +20,47 @@ inline unsigned long int gfxRGB( float r, float g, float b )
     return result;
 }
 
-void gfxDrawLoader( coreInfo &info, float &ticker )
+void gfxDrawLoader( coreInfo &info, int Loop)
 {
-    ticker += 0.4f;
-    float twopi = M_2PI;
 
-    if ( ticker > twopi )  ticker -= twopi;
-
-    float newticker = ticker + 0.4f;
-    for ( ; newticker < ticker+twopi; newticker += 0.4f )
+    auto _gfxDrawLoader = [&](float& ticker) -> void
     {
-        for ( float i = 0.0f; i < 5.0f; i += 0.1f )
+        ticker += 0.4f;
+        float twopi = M_2PI;
+
+        if (ticker > twopi)  ticker -= twopi;
+
+        float newticker = ticker + 0.4f;
+        for (; newticker < ticker + twopi; newticker += 0.4f)
         {
-            float circum = twopi * i, tinc = twopi / circum;
-            for ( float j = 0.0f; j <= twopi; j += tinc )
+            for (float i = 0.0f; i < 5.0f; i += 0.1f)
             {
-                float fx = info.iCWidth + cosf(j)*i;
-                fx += cosf(newticker) * 5.0f;
-                float fy = info.iCHeight + sinf(j)*i;
-                fy += sinf(newticker) * 5.0f;
+                float circum = twopi * i, tinc = twopi / circum;
+                for (float j = 0.0f; j <= twopi; j += tinc)
+                {
+                    float fx = info.iCWidth + cosf(j) * i;
+                    fx += cosf(newticker) * 5.0f;
+                    float fy = info.iCHeight + sinf(j) * i;
+                    fy += sinf(newticker) * 5.0f;
 
-                int ix = (int)floor(fx);
-                int iy = (int)floor(fy);
+                    int ix = (int)floor(fx);
+                    int iy = (int)floor(fy);
 
-                float c = newticker / (ticker+twopi);
-                info.pBuffer[ iy * info.iWidth + ix ] = gfxRGB(c,c,c);
+                    float c = newticker / (ticker + twopi);
+                    info.pBuffer[iy * info.iWidth + ix] = gfxRGB(c, c, c);
+                }
             }
         }
+    };
+
+    float lticker = 0.0f;
+    int loop = 0;
+    while (loop < Loop)
+    {
+        _gfxDrawLoader(lticker);
+        loop += lticker > 5.9 ? 1 : 0;
+        output.flipBuffers();
+        Sleep(10);
     }
 }
 

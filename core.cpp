@@ -1,5 +1,6 @@
-#include "main.h"
+﻿#include "main.h"
 #include "core.h"
+#include <TCHAR.h>
 
 inline void coreRenderView( coreInfo &core )
 {
@@ -85,15 +86,20 @@ inline void coreRenderView( coreInfo &core )
             core.pBuffer[offset] = gfxRGB( pv.r, pv.g, pv.b );
         }
     }
+
+    const int maxs = 100;
+    TCHAR text[maxs];
+    _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i"), core.Score, core.Ships, core.Fires, core.iGameLevel-1);
+    TextOut(core.hDC, core.iCWidth, 2, text, static_cast<int>(_tcslen(text)));
 }
 
-int coreMainThread( sys::screen *output )
+int coreMainThread( )
 {
     // setup output parameters
     coreInfo core;
-    core.pBuffer = output->getScreenBuffer();
-    core.iWidth = output->getWidth();
-    core.iHeight = output->getHeight();
+    core.pBuffer = output.getScreenBuffer();
+    core.iWidth = output.getWidth();
+    core.iHeight = output.getHeight();
     core.iSize = core.iWidth*core.iHeight;
     core.iCWidth = core.iWidth / 2;
     core.iCHeight = core.iHeight / 2;
@@ -102,28 +108,25 @@ int coreMainThread( sys::screen *output )
     core.fSWidth = core.iCWidth / core.fScaleX;
     core.fSHeight = core.iCHeight / core.fScaleY;
     core.points = 0;
+    core.hDC    =  output.Get_DC();
+
+    core.Score =
+    core.Fires = 0;
+    core.Ships = 0;
+
 
     // check if load succeeded
-    if ( !coreLoaderThread(&core) )
+    output.setVisible(true);
+    output.clearBuffer();
+
+    if ( !coreLoaderThread(core) )
     {
         // something went wrong
         bHasTermSignal = true;
     }
     else
     {
-        output->setVisible(true);
-        float lticker = 0.0f;
-        int loop = 0;
-        while (loop < 3)
-        {
-            gfxDrawLoader( core, lticker );
-            loop += lticker > 5.9 ? 1 : 0;
-            output->flipBuffers();
-            Sleep( 10 );
-        }
 
-        output->setCaption( _T("dila/2006") );
-        output->clearBuffer();
 
         // main draw loop
         while ( !bHasTermSignal )
@@ -134,8 +137,8 @@ int coreMainThread( sys::screen *output )
             coreRenderView( core );
 
             // blit frame and clear backbuffer
-            output->flipBuffers();
-            output->clearBuffer();
+            output.flipBuffers();
+            output.clearBuffer();
 
             // let other processes have cpu time
             Sleep( 10 );
@@ -150,19 +153,19 @@ int coreMainThread( sys::screen *output )
     delete core.points;
 
     // signal thread has finished
-    output->signalQuit();
+    output.signalQuit();
 
     return 0;
 }
 
-int coreLoaderThread( coreInfo *core )
+int coreLoaderThread( coreInfo &core )
 {
     // lists hold vertices, pointer to model struct
     array::list<vertex> plist;
     if ( !plist )
         return coreBadAlloc();
     array::list<vertex>::size_type nlast;
-    coreInfo::modPtrs &models = core->models;
+    coreInfo::modPtrs &models = core.models;
 
     // seed random number generator
     srand( sys::getSeed() );
@@ -218,12 +221,12 @@ int coreLoaderThread( coreInfo *core )
     nlast += models.stars.npoints;
 
     // all models generated, convert to linear array
-    core->points = new array::block<vertex>( plist );
-    if ( !core->points )
+    core.points = new array::block<vertex>( plist );
+    if ( !core.points )
         return coreBadAlloc();
 
     // set ship pointers into linear array
-    models.ship.pBegin = core->points->begin();
+    models.ship.pBegin = core.points->begin();
     models.ship.pEnd = models.ship.pBegin + models.ship.npoints;
 
     // setup misile model pointers
@@ -243,11 +246,10 @@ int coreLoaderThread( coreInfo *core )
     models.stars.pEnd = models.stars.pBegin + models.stars.npoints;
 
     // all done, initialize game
-    core->iGameLevel = 2;
-    bResult = astNewGame( core );
+    bResult = astNewGame( core, true );
     if ( !bResult )
     {
-        astDeallocSprites( *core );
+        astDeallocSprites( core );
         return coreBadAlloc();
     }
 
