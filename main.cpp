@@ -1,5 +1,6 @@
 #include "main.h"
 #include "core.h"
+#include <thread>
 
 // global running status flags
 bool bHasTermSignal = false;
@@ -27,8 +28,8 @@ int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
         return 0;
 
     // spawn the render thread. see core.cpp
-    sys::thread blitter( coreMainThread, false, &output );
-    if ( !blitter )
+    std::thread blitter( coreMainThread);
+    if ( !blitter.joinable() )
     {
         sys::userNotice( _T("Failed to spawn game thread."), true );
         return 0;
@@ -38,7 +39,7 @@ int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
     while ( output.doEvents() );
 
     // wait for render thread to exit
-    blitter.waitForSignal();
+    blitter.join();
 
     // return wParam, as msdn describes
     return output.getExitCode();
