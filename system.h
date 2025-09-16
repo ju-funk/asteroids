@@ -1,3 +1,7 @@
+#include "resource.h"
+#include <mmsystem.h>
+
+
 // SYSTEM OBJECT DECLERATIONS
 // ------------------------------------------------------------------
 namespace sys
@@ -45,11 +49,14 @@ public:
     HDC Get_DC() { return hVideoDC; }
     const TCHAR *GetTitle() {return pcTitle; }
 
-    bool GetMousePos(POINT &mousePos, int *&wheel);
+    bool GetMousePos(POINT& mousePos, int*& wheel);
+    void Sound(WORD id);
 
 private:
     // main init function
     bool create( bool topMost, bool hasCaption, bool scrCenter );
+    bool LoadWaves();
+    void CleanWave();
 
     // fullscreen helper
     bool toggleFullScreen( void );
@@ -75,6 +82,24 @@ private:
     int iBmpSize;
     int iWidth;
     int iHeight;
+
+    // waves
+    static void CALLBACK WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
+
+    const WORD StartHeader = 20;
+    const WORD WaveStartData = StartHeader + 22;
+    struct sSound 
+    {
+        HWAVEOUT hWaveOut = nullptr;
+        WAVEHDR waveHdr = {};
+        BYTE *buffer = nullptr;
+        DWORD size = 0;
+        WAVEFORMATEX wfx = {};
+        bool prepared = false;
+    };
+
+
+    sSound pWaves[IDW_ENDWAV - IDW_OFFSET];
 
     RECT rSize;
     TCHAR *szClass;

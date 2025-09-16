@@ -12,6 +12,12 @@
     <Filter Include="docu">
       <UniqueIdentifier>{44266a1c-fd50-4875-af08-09b54ebe02da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Waves">
+      <UniqueIdentifier>{e624ca48-4171-4934-ae25-d39a4dba64f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource">
+      <UniqueIdentifier>{3a0e266c-7b18-4062-9270-5fd7a45416f2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="system.cpp">
@@ -49,10 +55,38 @@
     <ClInclude Include="array.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt">
       <Filter>docu</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="waves\Asthit.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\CollAst.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\Fire.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\Level.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\Shipexpl.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\Start.wav">
+      <Filter>Waves</Filter>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="asteroids.rc">
+      <Filter>Resource</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
