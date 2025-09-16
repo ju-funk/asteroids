@@ -171,6 +171,8 @@ void sys::screen::cleanup( void )
     DeleteObject(hOldFontObj);
     DeleteDC( hVideoDC );
 
+    CleanWave();
+
     // cleanup window
     ReleaseDC( hWnd, hDC );
     DestroyWindow( hWnd );
@@ -208,6 +210,91 @@ bool sys::screen::doEvents( void )
 
     return true;
 }
+
+
+void sys::screen::Sound(WORD id)
+{
+    sSound& Snd = pWaves[id - IDW_OFFSET];
+
+    if (!Snd.prepared) 
+    {
+        Snd.prepared = true;
+        waveOutPrepareHeader(Snd.hWaveOut, &Snd.waveHdr, sizeof(WAVEHDR));
+        waveOutWrite(Snd.hWaveOut, &Snd.waveHdr, sizeof(WAVEHDR));
+    }
+}
+
+
+void CALLBACK sys::screen::WaveOutProc(HWAVEOUT hwo, UINT uMsg,DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
+{
+    if (uMsg == WOM_DONE) 
+    {
+        sSound* sound = reinterpret_cast<sSound*>(dwInstance);
+        waveOutUnprepareHeader(sound->hWaveOut, &sound->waveHdr, sizeof(WAVEHDR));
+        sound->prepared = false;
+    }
+}
+
+
+bool sys::screen::LoadWaves()
+{
+    auto LoadWave = [&](WORD id, sSound &snd) -> bool
+    {
+        HRSRC hRes = FindResource(hInstance, MAKEINTRESOURCE(id), _T("WAVE"));
+        if (hRes)
+        {
+            HGLOBAL hData = LoadResource(hInstance, hRes);
+            snd.size = SizeofResource(hInstance, hRes) - WaveStartData;
+            if (hData)
+            {
+                snd.buffer = reinterpret_cast<BYTE*>(LockResource(hData));
+                memcpy(reinterpret_cast<BYTE*>(&snd.wfx), snd.buffer + StartHeader, sizeof(WAVEFORMATEX));
+                snd.buffer -= WaveStartData;
+
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    for (WORD i = IDW_START; i < IDW_ENDWAV; ++i)
+    {
+        sSound &Snd = pWaves[i - IDW_OFFSET];
+        if (!LoadWave(i, Snd))
+        {
+            userNotice(_T("Unable to Load sound."), true);
+            return false;
+        }
+
+        MMRESULT res = waveOutOpen(&Snd.hWaveOut, WAVE_MAPPER, &Snd.wfx,
+                 (DWORD_PTR)WaveOutProc, (DWORD_PTR)&Snd, CALLBACK_FUNCTION);
+
+        if (res != MMSYSERR_NOERROR) 
+        {
+            userNotice(_T("Unable to register sound."), true);
+            return false;
+        }
+
+        Snd.waveHdr.lpData = reinterpret_cast<LPSTR>(Snd.buffer);
+        Snd.waveHdr.dwBufferLength = Snd.size;
+        Snd.waveHdr.dwFlags = 0;
+        Snd.waveHdr.dwLoops = 0;
+    }
+
+    return true;
+}
+
+void sys::screen::CleanWave()
+{
+    for (WORD i = IDW_START; i < IDW_ENDWAV; ++i)
+    {
+        sSound& Snd = pWaves[i - IDW_OFFSET];
+        waveOutClose(Snd.hWaveOut);
+    }
+
+}
+
 
 // ------------------------------------------------------------------
 // screen object: create - create window and video buffer
@@ -372,7 +459,7 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
         return false;
     }
 
-    return true;
+    return LoadWaves();
 }
 
 // ------------------------------------------------------------------

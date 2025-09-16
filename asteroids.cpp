@@ -108,6 +108,7 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             enta->speed = (maxdist - dist);
             enta->updatePos();
             enta->speed = oldspeed;
+            output.Sound(IDW_COLAST);
         }
         else // other collisions cause damage to entities
         {
@@ -126,6 +127,8 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
                 entb->scale += 0.1f;
                 entb->pos.z = -10.0f;
             }
+
+            output.Sound(IDW_ASTHIT);
         }
     }
 }
@@ -159,6 +162,8 @@ bool astFireBullet( coreInfo &core )
         return false;
 
     ++core.Fires;
+
+    output.Sound(IDW_FIRESH);
 
     return true;
 }
@@ -228,6 +233,9 @@ bool astUpdateState( coreInfo &core )
     entity *sprite = *i;
     if ( !sprite->health)
     {
+        if (sprite->scale < 1.12f)
+            output.Sound(IDW_SHIPEX);
+
         if (sprite->scale > 5.0f)
         {
             if (!astNewGame(core, true))
@@ -326,11 +334,13 @@ bool astNewGame( coreInfo &core, bool newgame )
         core.Ships = 3;
         core.Fires = 0;
         core.Score = 0;
+        output.Sound(IDW_START);
         gfxDrawLoader(core, 3);
     }
     else if (levelup)
     {
         ++core.iGameLevel;
+        output.Sound(IDW_LEVEL);
         gfxDrawLoader(core, 2);
     }
     else // new ship
