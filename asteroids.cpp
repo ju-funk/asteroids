@@ -344,6 +344,14 @@ bool astNewGame( coreInfo &core, bool newgame )
         ++core.iGameLevel;
         output.Sound(IDW_LEVEL);
         gfxDrawLoader(core, 2);
+
+        entity* ship = core.sprites.begin()->value;
+        if (ship->scale > 1.0)
+        {
+            --core.Ships;
+            if (core.Ships == 0)
+                astNewGame(core, true);
+        }
     }
     else // new ship
     {
