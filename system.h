@@ -24,10 +24,10 @@ public:
     bool operator !( void ) { return !wasInitialized; }
 
     // constructor, cleanup proceedure
-    screen( const TCHAR *szCaption) {pcTitle = szCaption;}
-    void Create(int width, int height, bool fullScreen, bool mouse );
-    ~screen( void ) { cleanup(); }
-    void cleanup( void );
+    screen(const TCHAR* szCaption) {pcTitle = szCaption;}
+    void Create(int width, int height, bool fullScreen, bool mouse);
+    ~screen(void) {cleanup();}
+    void cleanup(void);
 
     // display setup functions
     void setCaption( const TCHAR *szCaption );
@@ -47,9 +47,10 @@ public:
     int getHeight( void ) { return iHeight; }
 
     HDC Get_DC() { return hVideoDC; }
-    const TCHAR *GetTitle() {return pcTitle; }
+    const TCHAR *GetTitle() {return pcTitle;}
 
-    bool GetMousePos(POINT& mousePos, int*& wheel);
+    bool GetInputState(POINT& mousePos, int& wheel);
+    void SetInputState(UINT uMsg, WPARAM wParam, LPARAM lParam);
     void Sound(WORD id);
 
 private:
@@ -59,11 +60,11 @@ private:
     void CleanWave();
 
     // fullscreen helper
-    bool toggleFullScreen( void );
+    bool toggleFullScreen(void);
 
     // message handling proceedure
-    static LRESULT CALLBACK winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-    static int StWheel;
+    static LRESULT CALLBACK winDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    int StWheel;
     bool EnaMouse;
 
     // window members

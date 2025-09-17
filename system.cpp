@@ -69,24 +69,23 @@ unsigned long sys::getSeed( void )
 }
 
 
-int sys::screen::StWheel = 0;
-
 // ------------------------------------------------------------------
 // screen object: winDlgProc - static event handling proceedure
 // ------------------------------------------------------------------
 LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
+    static sys::screen* This = nullptr;
+
     switch( uMsg )
     {
+    case WM_NULL:
+        if(hWnd == 0 && wParam == 0)
+            This = reinterpret_cast<sys::screen*>(lParam);
+        break;
 
     case WM_MOUSEWHEEL:
-    {
-        int delta = GET_WHEEL_DELTA_WPARAM(wParam); // Wheel
-        if (delta > 0)
-            StWheel |= 1; // up
-        else if (delta < 0)
-            StWheel |= 2; // down
-    }
+        This->SetInputState(WM_MOUSEWHEEL, wParam, lParam);
+        break;
 
     case WM_KEYDOWN:
         if ( wParam != VK_ESCAPE )
@@ -98,7 +97,7 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
         if ( !bHasTermSignal )
         {
             bHasTermSignal = true;
-            ShowWindow( hWnd, SW_HIDE );
+            This->setVisible(false);
         }
         else
         {
@@ -120,6 +119,39 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
 
     return 0;
 }
+
+void sys::screen::SetInputState(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+    case WM_MOUSEWHEEL:
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam); // Wheel
+        if (delta > 0)
+            StWheel = 1; // up
+        else if (delta < 0)
+            StWheel = 2; // down
+        break;
+    }
+}
+
+// input handling
+bool sys::screen::GetInputState(POINT& mousePos, int &wheel)
+{
+    bool ret = EnaMouse;
+
+    GetCursorPos(&mousePos);
+    ScreenToClient(hWnd, &mousePos);
+
+    if (mousePos.x < 0 || mousePos.y < 0 ||
+        mousePos.x > iWidth || mousePos.y > iHeight)
+        ret = false;
+
+    wheel = StWheel;
+    StWheel = 0;
+
+    return ret;
+}
+
 
 // ------------------------------------------------------------------
 // screen object: constructor - create window and set fullscreen
@@ -301,6 +333,8 @@ void sys::screen::CleanWave()
 // ------------------------------------------------------------------
 bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
 {
+    winDlgProc(0, WM_NULL, 0, reinterpret_cast<LPARAM>(this));  //init Win Dlg function with this pointer
+
     // fill class struct
     WNDCLASSEX wClass = { 0 };
     wClass.cbSize = sizeof(WNDCLASSEX);
@@ -548,25 +582,6 @@ void sys::screen::setVisible( bool state )
     else
         ShowWindow( hWnd, SW_HIDE );
 }
-
-// mouse-pos handling
-bool sys::screen::GetMousePos(POINT& mousePos, int *&wheel)
-{
-    bool ret = EnaMouse;
-
-    GetCursorPos(&mousePos);
-    ScreenToClient(hWnd, &mousePos);
-
-    if (mousePos.x < 0 || mousePos.y < 0 ||
-        mousePos.x > iWidth || mousePos.y > iHeight)
-        ret = false;
-
-    wheel = &StWheel;
-
-    return ret;
-}
-
-
 
 // ------------------------------------------------------------------
 // screen object: redrawWindow - redraw entire window area

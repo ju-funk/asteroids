@@ -1,6 +1,9 @@
 // ------------------------------------------------------------------
 // entity object. stores sprite relevant variables
 // ------------------------------------------------------------------
+#include <vector>
+#include <chrono>
+
 class entity
 {
 public:
@@ -28,3 +31,32 @@ public:
     float scale;
     model points;
 };
+
+class KeyMan
+{
+public:
+    enum { IsDown = 0, MustToggle = -1, eKeyNone = 0, eKeyShift = 1, eKeyCtrl = 2, eKeyAlt = 4 }; // Todo > 0 --> timeout
+    bool GetKeyState(int Key, int Todo, int extkey = eKeyNone);
+
+private:
+    struct kdat
+    {
+        int Key, extKeys;
+        bool isPress;
+        std::chrono::steady_clock::time_point last;
+
+        kdat(int key, int ekey)
+        {
+            Key = key;
+            extKeys = ekey;
+            isPress = false;
+            last = std::chrono::high_resolution_clock::now();
+        }
+    };
+
+    std::vector<kdat> vkDat;
+
+    kdat& GetKDat(int Key, int extkey);
+};
+
+

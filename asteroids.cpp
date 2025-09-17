@@ -3,6 +3,10 @@
 
 #include <math.h>
 
+
+KeyMan keys;
+
+
 inline void astHandleInput( coreInfo &core )
 {
     // a pointer to our spaceship
@@ -10,11 +14,11 @@ inline void astHandleInput( coreInfo &core )
     if(spaceship->health == 0)
         return;
 
-    int *wheel;
+    int wheel;
 
     POINT mousePos;
 
-    if (output.GetMousePos(mousePos, wheel))
+    if(output.GetInputState(mousePos, wheel))
     {
         mousePos.y -= core.iCHeight + static_cast<long>(spaceship->pos.y * core.fScaleY);
         mousePos.x -= core.iCWidth + static_cast<long>(spaceship->pos.x * core.fScaleX);
@@ -23,40 +27,38 @@ inline void astHandleInput( coreInfo &core )
         if (spaceship->rz < 0)
             spaceship->rz += M_2PI; // Bereich 0...2Pi
 
-        if ( GetAsyncKeyState(VK_LBUTTON) & 1)
+        if(keys.GetKeyState(VK_LBUTTON, KeyMan::MustToggle))
            astFireBullet(core);
 
-        if (GetAsyncKeyState(VK_RBUTTON))
+        //if(keys.GetKeyState(VK_LBUTTON, 30, KeyMan::eKeyCtrl))    // 19 ==> typeRate
+        //   astFireBullet(core);
+
+        if(keys.GetKeyState(VK_MBUTTON, KeyMan::MustToggle))
             spaceship->pos.g = spaceship->pos.r = 0.0f;
 
-        //if ( GetAsyncKeyState(VK_MBUTTON)) 
+        //if(keys.GetKeyState(VK_RBUTTON, eyMan::MustToggle)) 
             ; // shild
 
-        if ((*wheel & 1) == 1)
-        {
-            *wheel &= ~1;
+        if((wheel & 1) == 1)
             spaceship->speed = 0.01f;
-        }
-        if ((*wheel & 2) == 2)
-        {
-            *wheel &= ~2;
+        if((wheel & 2) == 2)
             spaceship->speed = -0.01f;
-        }
     }
 
-    if ( GetAsyncKeyState(VK_SPACE) & 1)
+    if(keys.GetKeyState(VK_SPACE, KeyMan::MustToggle))
         astFireBullet(core);
 
-    if ( GetAsyncKeyState(VK_UP) )
+    if(keys.GetKeyState(VK_UP, KeyMan::IsDown))
         spaceship->speed = 0.01f;
-    if ( GetAsyncKeyState(VK_DOWN) )
+    if(keys.GetKeyState(VK_DOWN, KeyMan::IsDown))
         spaceship->speed = -0.01f;
-    if ( GetAsyncKeyState(VK_LEFT) )
+
+    if(keys.GetKeyState(VK_LEFT, KeyMan::IsDown))
         spaceship->rz -= 0.1f;
-    if ( GetAsyncKeyState(VK_RIGHT) )
+    if(keys.GetKeyState(VK_RIGHT, KeyMan::IsDown))
         spaceship->rz += 0.1f;
 
-    if ( GetAsyncKeyState(VK_CONTROL) )
+    if(keys.GetKeyState(VK_CONTROL, KeyMan::IsDown))
         spaceship->pos.g = spaceship->pos.r = 0.0f;
 }
 
@@ -524,3 +526,71 @@ void entity::swapSpeed( entity *with )
     with->speed = speed;
     speed = temp;
 }
+
+
+bool KeyMan::GetKeyState(int Key, int Todo, int extkey)
+{
+    bool ret = false, down = false;
+
+    short ekey = (GetAsyncKeyState(VK_SHIFT) & 0x8000) ? eKeyShift : 0;
+    ekey |= (GetAsyncKeyState(VK_CONTROL) & 0x8000) ? eKeyCtrl : 0;
+    ekey |= (GetAsyncKeyState(VK_MENU) & 0x8000) ? eKeyAlt : 0;
+
+    if (ekey != extkey)
+        return false;
+
+    short state = GetAsyncKeyState(Key);
+
+    switch (Todo)
+    {
+    case IsDown:
+        return ((state & 0x8000) == 0x8000);
+    case MustToggle:
+    {
+        kdat& dat = GetKDat(Key, extkey);
+        if (!dat.isPress)
+        {
+            dat.isPress = ((state & 0x8000) == 0x8000);
+            return dat.isPress;
+        }
+        else
+        {
+            dat.isPress = ((state & 0x8001) != 0);
+            return false;
+        }
+    }
+    default:  // timer
+    {
+        kdat& dat = GetKDat(Key, extkey);
+
+        if ((state & 0x8000) == 0x8000)
+        {
+            auto now = std::chrono::steady_clock::now();
+            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - dat.last).count();
+            if (ms > Todo)
+            {
+                dat.last = now;
+                return true;
+            }
+        }
+
+        return false;
+    }
+    }
+
+    return ret;
+}
+
+
+KeyMan::kdat& KeyMan::GetKDat(int Key, int extkey)
+{
+    auto it = std::find_if(vkDat.begin(), vkDat.end(), [Key, extkey](kdat& v) { return v.Key == Key && v.extKeys == extkey; });
+    if (it != vkDat.end())
+        return *it;
+
+    kdat dat(Key, extkey);
+    vkDat.push_back(dat);
+
+    return *std::prev(vkDat.end());
+}
+
