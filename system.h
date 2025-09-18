@@ -1,5 +1,6 @@
 #include "resource.h"
 #include <mmsystem.h>
+#include <algorithm>
 
 
 // SYSTEM OBJECT DECLERATIONS
@@ -88,7 +89,7 @@ private:
     static void CALLBACK WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
 
     const WORD StartHeader = 20;
-    const WORD WaveStartData = StartHeader + 22;
+    const WORD WaveStartData = StartHeader + 24;
     struct sSound 
     {
         HWAVEOUT hWaveOut = nullptr;

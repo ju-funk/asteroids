@@ -270,20 +270,32 @@ void CALLBACK sys::screen::WaveOutProc(HWAVEOUT hwo, UINT uMsg,DWORD_PTR dwInsta
 
 bool sys::screen::LoadWaves()
 {
+    const char dataId[] = "data";
+    
     auto LoadWave = [&](WORD id, sSound &snd) -> bool
     {
         HRSRC hRes = FindResource(hInstance, MAKEINTRESOURCE(id), _T("WAVE"));
         if (hRes)
         {
             HGLOBAL hData = LoadResource(hInstance, hRes);
-            snd.size = SizeofResource(hInstance, hRes) - WaveStartData;
+            snd.size = SizeofResource(hInstance, hRes);
+
             if (hData)
             {
                 snd.buffer = reinterpret_cast<BYTE*>(LockResource(hData));
                 memcpy(reinterpret_cast<BYTE*>(&snd.wfx), snd.buffer + StartHeader, sizeof(WAVEFORMATEX));
-                snd.buffer -= WaveStartData;
 
-                return true;
+                auto it = std::search(snd.buffer, snd.buffer + snd.size, dataId, dataId + 4);
+                if (it != snd.buffer + snd.size)
+                {
+                    DWORD* size = reinterpret_cast<DWORD*>(it + 4);
+                    snd.buffer = it + 8;
+                    snd.size = *size;
+
+                    return true;
+                }
+
+                return false;
             }
         }
 
@@ -324,7 +336,6 @@ void sys::screen::CleanWave()
         sSound& Snd = pWaves[i - IDW_OFFSET];
         waveOutClose(Snd.hWaveOut);
     }
-
 }
 
 

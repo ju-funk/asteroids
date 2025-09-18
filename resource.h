@@ -8,14 +8,17 @@
 #define IDW_FIRESH                     103
 #define IDW_COLAST                     104
 #define IDW_ASTHIT                     105
-#define IDW_SHIPEX                     106
-#define IDW_ENDWAV                     107
+#define IDW_ASTEXP                     106
+#define IDW_ASTSHL                     107
+#define IDW_SHIPEX                     108
+#define IDW_FIRWAR                     109
+#define IDW_ENDWAV                     110
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        108
+#define _APS_NEXT_RESOURCE_VALUE        111
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
