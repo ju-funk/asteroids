@@ -54,11 +54,11 @@ inline void astHandleInput( coreInfo &core )
         spaceship->speed = -0.01f;
 
     if(keys.GetKeyState(VK_LEFT, KeyMan::IsDown))
-        spaceship->rz -= 0.1f;
+        spaceship->rz -= 0.06f;
     if(keys.GetKeyState(VK_RIGHT, KeyMan::IsDown))
-        spaceship->rz += 0.1f;
+        spaceship->rz += 0.06f;
 
-    if(keys.GetKeyState(VK_CONTROL, KeyMan::IsDown))
+    if(keys.GetKeyState(VK_CONTROL, KeyMan::IsDown, KeyMan::eKeyCtrl))
         spaceship->pos.g = spaceship->pos.r = 0.0f;
 }
 
@@ -148,6 +148,9 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
 // ------------------------------------------------------------------
 bool astFireBullet( coreInfo &core )
 {
+    if(core.Fires == 0)
+        return true;
+
     // copy angle from players space ship
     // allocate new sprite using bullet model
     entity *ship = core.sprites.begin()->value;
@@ -167,13 +170,14 @@ bool astFireBullet( coreInfo &core )
     bullet->speed = 0.7f;
     bullet->setDir( ship->rz );
     bullet->TypeEnty = entity::Fire;
+    bullet->liveTime = static_cast<DWORD>(35 / bullet->speed) + 1;
 
 
     // add bullet to active sprite list
     if ( !core.sprites.push_back(bullet) )
         return false;
 
-    ++core.Fires;
+    --core.Fires;
 
     output.Sound(IDW_FIRESH);
 
@@ -279,8 +283,12 @@ bool astUpdateState( coreInfo &core )
             if ( sprite->scale > 5.0f )
             {
                 // entity exploded, remove from list
-                if(sprite->TypeEnty & entity::Astro)
+                if (sprite->TypeEnty & entity::Astro)
+                {
                     core.Score += 10;
+                    core.Fires += 5;
+                }
+
                 delete sprite;
                 core.sprites.remove( i );
             }
@@ -308,13 +316,7 @@ bool astUpdateState( coreInfo &core )
             continue;
         }
 
-        // spin the model a bit
-        sprite->rx += sprite->pos.r/(70-sprite->speed);
-        sprite->ry += sprite->pos.g/(70-sprite->speed);
-        sprite->rz += 0.005f;
-
-        // adjust position
-        sprite->updatePos();
+        sprite->Spin();
     }
 
     // if no asteroids left, level up!
@@ -344,7 +346,7 @@ bool astNewGame( coreInfo &core, bool newgame )
     {
         core.iGameLevel = 2;
         core.Ships = 3;
-        core.Fires = 0;
+        core.Fires = 10;
         core.Score = 0;
         output.Sound(IDW_START);
         gfxDrawLoader(core, 3);
@@ -371,6 +373,8 @@ bool astNewGame( coreInfo &core, bool newgame )
         entity nship(core.models.ship, 0.0f, 0.0f);
         nship.TypeEnty = entity::Ship;
         *ship = nship;
+        if(core.Fires == 0) 
+            core.Fires = 3;
 
         return true;
     }
@@ -464,7 +468,8 @@ entity::entity( model &source, float xpos, float ypos )
     TypeEnty = None;
 
     // temp health point
-    health = 1;
+    health   = 1;
+    liveTime = 0;
 }
 
 // ------------------------------------------------------------------
@@ -544,6 +549,33 @@ void entity::swapSpeed( entity *with )
     with->speed = speed;
     speed = temp;
 }
+
+void entity::Spin()
+{
+    // spin the model a bit
+    rx += pos.r / (70 - speed);
+    ry += pos.g / (70 - speed);
+    rz += 0.005f;
+
+    // adjust position
+    updatePos();
+
+    if (liveTime != 0)
+    {
+        --liveTime;
+        if (liveTime == 1)
+        {
+            health = 0;
+            TypeEnty |= entity::None;
+            scale += 1.1f;
+            pos.z = -10.0f;
+        }
+    }
+}
+
+
+
+
 
 
 bool KeyMan::GetKeyState(int Key, int Todo, int extkey)

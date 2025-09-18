@@ -16,6 +16,7 @@ public:
     void setDir( float angle );
     void addDir( float angle );
     void swapDir( entity *with );
+    void Spin();
     void swapSpeed( entity *with );
 
     // member vars
@@ -24,6 +25,7 @@ public:
     float speed;
 
     int health;
+    DWORD liveTime;
     enum TypesEnty{None=1, Ship=2, Fire=4, Astro=8};
     DWORD TypeEnty;
 
