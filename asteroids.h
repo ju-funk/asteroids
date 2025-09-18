@@ -24,8 +24,8 @@ public:
     float speed;
 
     int health;
-    bool isAsteroid;
-    bool canCollide;
+    enum TypesEnty{None=1, Ship=2, Fire=4, Astro=8};
+    DWORD TypeEnty;
 
     // model pointer and scale
     float scale;
