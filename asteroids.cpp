@@ -30,7 +30,7 @@ inline void astHandleInput( coreInfo &core )
         if(keys.GetKeyState(VK_LBUTTON, KeyMan::MustToggle))
            astFireBullet(core);
 
-        //if(keys.GetKeyState(VK_LBUTTON, 30, KeyMan::eKeyCtrl))    // 19 ==> typeRate
+        //if(keys.GetKeyState(VK_LBUTTON, 30, KeyMan::eKeyCtrl))    // 19 ==> typeRate, ideal 30
         //   astFireBullet(core);
 
         if(keys.GetKeyState(VK_MBUTTON, KeyMan::MustToggle))
@@ -100,24 +100,32 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
     if ( dist < maxdist )
     {
         // two asteroids collide, switch direction vectors
-        if ( enta->isAsteroid  &&  entb->isAsteroid )
+        DWORD state = enta->TypeEnty | entb->TypeEnty;
+        float oldspeed;
+
+        switch (state)                           //None = 1, Ship = 2, Fire = 4, Astro = 8
         {
+        case entity::Astro | entity::Astro:
             enta->swapDir( entb );
             enta->swapSpeed( entb );
 
             // prevent asteroids from getting locked together
-            float oldspeed = enta->speed;
+            oldspeed = enta->speed;
             enta->speed = (maxdist - dist);
             enta->updatePos();
             enta->speed = oldspeed;
             output.Sound(IDW_COLAST);
-        }
-        else // other collisions cause damage to entities
-        {
+            break;
+
+        case entity::Fire | entity::Astro:
+            output.Sound(IDW_ASTHIT);
+        case entity::Ship | entity::Astro:
+        case entity::Ship | entity::Fire:
+        case entity::Fire | entity::Fire:
             // if the first entity is dead, start exploding
             if ( !--enta->health )
             {
-                enta->canCollide = false;
+                enta->TypeEnty |= entity::None;
                 enta->scale += 0.1f;
                 enta->pos.z = -10.0f;
             }
@@ -125,12 +133,12 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             // same with the second entity
             if ( !--entb->health )
             {
-                entb->canCollide = false;
+                entb->TypeEnty |= entity::None;
                 entb->scale += 0.1f;
                 entb->pos.z = -10.0f;
             }
+            break;
 
-            output.Sound(IDW_ASTHIT);
         }
     }
 }
@@ -158,6 +166,8 @@ bool astFireBullet( coreInfo &core )
     // set actual speed and set direction
     bullet->speed = 0.7f;
     bullet->setDir( ship->rz );
+    bullet->TypeEnty = entity::Fire;
+
 
     // add bullet to active sprite list
     if ( !core.sprites.push_back(bullet) )
@@ -209,7 +219,7 @@ bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
         entity *sprite = new entity( newType, xpos, ypos );
         if ( !sprite )
             return false;
-        sprite->isAsteroid = true;
+        sprite->TypeEnty = entity::Astro;
         sprite->speed = 0.1f + 0.2f * frand();
         sprite->health = iHealth;
 
@@ -260,7 +270,7 @@ bool astUpdateState( coreInfo &core )
         sprite = *i;
 
         // count number of asteroids
-        if ( sprite->isAsteroid )
+        if ( sprite->TypeEnty & entity::Astro)
             ++astCount;
 
         // check if entity is exploding
@@ -269,7 +279,7 @@ bool astUpdateState( coreInfo &core )
             if ( sprite->scale > 5.0f )
             {
                 // entity exploded, remove from list
-                if(sprite->isAsteroid)
+                if(sprite->TypeEnty & entity::Astro)
                     core.Score += 10;
                 delete sprite;
                 core.sprites.remove( i );
@@ -277,7 +287,7 @@ bool astUpdateState( coreInfo &core )
             else  // entity still exploding
             {
                 // if dead, but not yet replaced with smaller asteroids
-                if ( !sprite->health  && sprite->isAsteroid )
+                if ( !sprite->health  && (sprite->TypeEnty & entity::Astro) )
                 {
                     // replace with smaller asteroids
                     if ( sprite->points.pBegin != core.models.stroidTiny.pBegin )
@@ -359,6 +369,7 @@ bool astNewGame( coreInfo &core, bool newgame )
         gfxDrawLoader(core, 1);
         entity* ship = core.sprites.begin()->value;
         entity nship(core.models.ship, 0.0f, 0.0f);
+        nship.TypeEnty = entity::Ship;
         *ship = nship;
 
         return true;
@@ -368,6 +379,7 @@ bool astNewGame( coreInfo &core, bool newgame )
 
     // ship entity must always be first
     entity* player = new entity(core.models.ship, 0.0f, 0.0f);
+    player->TypeEnty = entity::Ship;
     if (!player)
         return false;
     bool bResult = core.sprites.push_back(player);
@@ -378,7 +390,6 @@ bool astNewGame( coreInfo &core, bool newgame )
     entity* starfield = new entity(core.models.stars, 0.0f, 0.0f);
     if (!starfield)
         return false;
-    starfield->canCollide = false;
     bResult = core.sprites.push_back(starfield);
     if (!bResult)
         return false;
@@ -450,8 +461,7 @@ entity::entity( model &source, float xpos, float ypos )
     points = source;
 
     // set default flags
-    canCollide = true;
-    isAsteroid = false;
+    TypeEnty = None;
 
     // temp health point
     health = 1;

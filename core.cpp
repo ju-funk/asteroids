@@ -11,7 +11,7 @@ inline void coreRenderView( coreInfo &core )
         entity *sprite = *i;
       
         // test for collisions between this entity and all others
-        if ( sprite->canCollide )
+        if ( (sprite->TypeEnty & entity::None) != entity::None)
         {
             // do not wrap coords for sprites that can't collide
             astWrapSprite( core, *sprite );
@@ -21,7 +21,7 @@ inline void coreRenderView( coreInfo &core )
             for ( ++k; k != core.sprites.end(); ++k )
             {
                 entity *other = *k;
-                if ( !other->canCollide )
+                if ( other->TypeEnty & entity::None)
                     continue;
                 astCheckCollision( core, sprite, other );
             }
