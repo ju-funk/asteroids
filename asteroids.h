@@ -105,8 +105,7 @@ private:
             for (currTime = intervalSeconds; currTime > 0; --currTime)
             {
                 auto wakeUp = std::chrono::steady_clock::now() + std::chrono::seconds(1);
-                while (active && std::chrono::steady_clock::now() < wakeUp)
-                    cv.wait_until(lock, wakeUp);
+                cv.wait_until(lock, wakeUp);
 
                 if (!active)
                     break; // Stop/Reset
@@ -198,14 +197,6 @@ public:
         std::lock_guard<std::mutex> lock(mtx);
         active = false;
         timeElapsed = false;
-        cv.notify_one();
-    }
-
-    void Reset()
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        timeElapsed = false;
-        active = false;
         cv.notify_one();
     }
 
