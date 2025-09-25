@@ -131,7 +131,6 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             break;
 
         case entity::Fire | entity::Astro:
-            output.Sound(IDW_ASTHIT);
         case entity::Ship | entity::Astro:
         case entity::Ship | entity::Fire:
         case entity::Fire | entity::Fire:
@@ -141,7 +140,10 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
                 enta->TypeEnty |= entity::None;
                 enta->scale += 0.1f;
                 enta->pos.z = -10.0f;
+                output.Sound(IDW_ASTEXP);
             }
+            else if(state == (entity::Fire | entity::Astro))
+                output.Sound(IDW_ASTHIT);
 
             // same with the second entity
             if ( !--entb->health )
@@ -150,6 +152,7 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
                 entb->scale += 0.1f;
                 entb->pos.z = -10.0f;
             }
+
             break;
 
         }
