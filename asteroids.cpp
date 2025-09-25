@@ -394,6 +394,9 @@ bool astNewGame( coreInfo &core, bool newgame )
     bool restart = (core.Ships <= 1 && newgame);
     bool levelup = (core.Ships > 0 && !newgame);
 
+    tiStayShild.Stop();
+    tiNextShild.Stop();
+
     if (restart)
     {
         core.iGameLevel = 2;
