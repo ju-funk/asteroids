@@ -371,6 +371,8 @@ bool astUpdateState( coreInfo &core )
         }
 
         sprite->Spin();
+
+        sprite->TestLive();
     }
 
     // if no asteroids left, level up!
@@ -526,6 +528,22 @@ entity::entity( model &source, float xpos, float ypos )
     liveTime = 0;
 }
 
+
+void entity::TestLive()
+{
+    if (liveTime != 0)
+    {
+        --liveTime;
+        if (liveTime == 0)
+        {
+            health = 0;
+            TypeEnty |= entity::None;
+            scale += 1.1f;
+            pos.z = -10.0f;
+        }
+    }
+}
+
 // ------------------------------------------------------------------
 // set direction vector, held in RGB values of pos vector
 // ------------------------------------------------------------------
@@ -658,18 +676,6 @@ void entity::Spin()
 
     // adjust position
     updatePos();
-
-    if (liveTime != 0)
-    {
-        --liveTime;
-        if (liveTime == 1)
-        {
-            health = 0;
-            TypeEnty |= entity::None;
-            scale += 1.1f;
-            pos.z = -10.0f;
-        }
-    }
 }
 
 
