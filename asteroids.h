@@ -78,15 +78,13 @@ private:
     std::atomic<bool> running{ true };   // Thread live
     std::atomic<bool> active{ false };   // Timer
     std::atomic<bool> timeElapsed{ false };
-
-    int intervalSeconds{ 0 };
-    std::function<void()> callback = nullptr;
-
+    std::function<void()> callback{ nullptr };
     std::mutex mtx;
     std::condition_variable cv;
 
-    bool breakOnElapsed = true;
-    int currTime = 0;
+    int intervalSeconds{ 0 };
+    int currTime{ 0 };
+    bool breakOnElapsed{ true };
 
     void threadFunc()
     {
@@ -95,7 +93,7 @@ private:
         while (running)
         {
             // wait of timer new start 
-            cv.wait(lock, [this] { return active.load() || !running.load(); });
+            cv.wait(lock, [this] { return active || !running.load(); });
 
             if (!running)
                 break;
@@ -152,7 +150,7 @@ public:
     void Start(int second, bool breakFlag)
     {
         std::lock_guard<std::mutex> lock(mtx);
-        intervalSeconds = second;
+        currTime = intervalSeconds = second;
         breakOnElapsed = breakFlag;
         callback = nullptr;
         timeElapsed = false;
@@ -163,7 +161,7 @@ public:
     void Start(std::function<void()> func, int second)
     {
         std::lock_guard<std::mutex> lock(mtx);
-        intervalSeconds = second;
+        currTime = intervalSeconds = second;
         callback = func;
         breakOnElapsed = true;
         timeElapsed = false;
@@ -197,6 +195,7 @@ public:
         std::lock_guard<std::mutex> lock(mtx);
         active = false;
         timeElapsed = false;
+        currTime = 0;
         cv.notify_one();
     }
 
