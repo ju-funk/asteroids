@@ -24,6 +24,7 @@ public:
     void swapAstDir( entity *with, float speed );
     void swapSldDir( entity *with, float speed );
     void Spin();
+    bool checkShip();
     void TestLive();
     void swapSpeed( entity *with );
 
