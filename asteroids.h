@@ -34,7 +34,7 @@ public:
     float speed;
 
     int health;
-    DWORD liveTime;
+    DWORD liveTime, currFire;
     enum TypesEnty{None=1, Ship=2, Fire=4, Astro=8, Shild=16};
     DWORD TypeEnty;
 

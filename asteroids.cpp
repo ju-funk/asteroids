@@ -186,14 +186,15 @@ bool astFireBullet( coreInfo &core )
     bullet->speed = 0.7f;
     bullet->setDir( ship->rz );
     bullet->TypeEnty = entity::Fire;
-    bullet->liveTime = static_cast<DWORD>(35 / bullet->speed) + 1;
-
+    bullet->liveTime = static_cast<DWORD>(40 / bullet->speed) + 1;
+    bullet->currFire = --core.Fires;
+    if (core.Fires == 2)
+        output.Sound(IDW_FIRWAR);
 
     // add bullet to active sprite list
     if ( !core.sprites.push_back(bullet) )
         return false;
 
-    --core.Fires;
 
     output.Sound(IDW_FIRESH);
 
@@ -300,8 +301,8 @@ bool astUpdateState( coreInfo &core )
 
     // check for game over
     array::list<entity*>::iterator i = core.sprites.begin();
-    entity *sprite = *i;
-    if (sprite->checkShip())
+    entity *ship = *i;
+    if (ship->checkShip())
     {
         if (!astNewGame(core, true))
             return coreBadAlloc();
@@ -313,10 +314,11 @@ bool astUpdateState( coreInfo &core )
     int astCount = 0;
     for ( ++i, ++i; i != core.sprites.end(); ++i )
     {
-        sprite = *i;
+        entity *sprite = *i;
+        bool IsAstro = sprite->TypeEnty & entity::Astro;
 
         // count number of asteroids
-        if ( sprite->TypeEnty & entity::Astro)
+        if (IsAstro)
             ++astCount;
 
         // check if entity is exploding
@@ -324,26 +326,32 @@ bool astUpdateState( coreInfo &core )
         {
             if ( sprite->scale > 5.0f )
             {
-                // entity exploded, remove from list
-                if (sprite->TypeEnty & entity::Astro)
+                if (IsAstro)
                 {
                     core.Score += 10;
                     core.Fires += 5;
                 }
+                else if(sprite->currFire == 0 && core.Fires == 0)
+                {
+                    ship->health = 0;
+                    ship->TypeEnty |= entity::None;
+                    ship->scale += 0.1f;
+                    ship->pos.z = -10.0f;
+                }
 
+                // entity exploded, remove from list
                 delete sprite;
                 core.sprites.remove( i );
             }
             else  // entity still exploding
             {
                 // if dead, but not yet replaced with smaller asteroids
-                if ( !sprite->health  && (sprite->TypeEnty & entity::Astro) )
+                if ( !sprite->health  && IsAstro )
                 {
                     // replace with smaller asteroids
                     if ( sprite->points.pBegin != core.models.stroidTiny.pBegin )
                     {
-                        bool bResult = astSpawnStroids( core, &sprite->points, sprite->pos );
-                        if ( !bResult )
+                        if ( !astSpawnStroids( core, &sprite->points, sprite->pos ) )
                             return coreBadAlloc();
                     }
 
@@ -516,7 +524,7 @@ entity::entity( model &source, float xpos, float ypos )
 
     // temp health point
     health   = 1;
-    liveTime = 0;
+    liveTime = currFire = 0;
 }
 
 
