@@ -5,6 +5,7 @@
 inline void coreRenderView( coreInfo &core )
 {
     // loop active sprite list
+    std::lock_guard<std::mutex> lock(core.mtx);
     array::list<entity*>::iterator i = core.sprites.begin();
     for ( ; i != core.sprites.end(); ++i )
     {
@@ -14,7 +15,6 @@ inline void coreRenderView( coreInfo &core )
         if ( (sprite->TypeEnty & entity::None) != entity::None)
         {
             // do not wrap coords for sprites that can't collide
-            astWrapSprite( core, *sprite );
 
             // for every entity apart from ones already tested...
             array::list<entity*>::iterator k = i;
@@ -25,6 +25,8 @@ inline void coreRenderView( coreInfo &core )
                     continue;
                 astCheckCollision( core, sprite, other );
             }
+
+            astWrapSprite( core, *sprite );
         }
 
         // used for colour fadeout, avoid per pixel division
@@ -89,7 +91,8 @@ inline void coreRenderView( coreInfo &core )
 
     const int maxs = 100;
     TCHAR text[maxs];
-    _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i"), core.Score, core.Ships, core.Fires, core.iGameLevel-1);
+    int si = getShildInf();
+    _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝ :%i"), core.Score, core.Ships, core.Fires, core.iGameLevel-1, si);
     TextOut(core.hDC, core.iCWidth, 2, text, static_cast<int>(_tcslen(text)));
 }
 
@@ -126,8 +129,6 @@ int coreMainThread( )
     }
     else
     {
-
-
         // main draw loop
         while ( !bHasTermSignal )
         {
@@ -164,90 +165,71 @@ int coreLoaderThread( coreInfo &core )
     array::list<vertex> plist;
     if ( !plist )
         return coreBadAlloc();
-    array::list<vertex>::size_type nlast;
     coreInfo::modPtrs &models = core.models;
+    float scale;
 
     // seed random number generator
     srand( sys::getSeed() );
 
     // make ship model
-    models.ship.scale = 1.0f;
-    if ( !gfxGenShip(plist, 0.05f) )
+    scale = 1.0f;
+    if(models.ship.Sets(gfxGenShip(plist, scale, 0.08f, false), scale))
         return coreBadAlloc();
-    models.ship.npoints = plist.size();
-    nlast = models.ship.npoints;
+
+    if(models.shild.Sets(gfxGenShip(plist, scale, 0.08f, true), scale))
+        return coreBadAlloc();
 
     // make misile model, store end points
-    models.misile.scale = 0.5f;
-    vertex colour = { 0.0f, 0.0f, 0.0f, 0.5f, 0.5f, 0.5f };
-    bool bResult = gfxGenAsteroid( plist, models.misile.scale, 5.0f, colour );
-    if ( !bResult )
+    scale = 0.5f;
+    vertex colour = { 1.0f, 0.0f, 0.5f, 0.5f, 0.5f, 0.5f };
+    if(models.misile.Sets(gfxGenAsteroid(plist, scale, 5.0f, colour), scale))
         return coreBadAlloc();
-    models.misile.npoints = plist.size() - nlast;
-    nlast += models.misile.npoints;
 
     // make tiny asteroid model
-    models.stroidTiny.scale = 1.0f;
+    scale = 1.0f;
     colour.r = 0.2f;  colour.g = 0.3f;  colour.b = 0.2f;
-    bResult = gfxGenAsteroid( plist, models.stroidTiny.scale, 10.0f, colour );
-    if ( !bResult )
+    if(models.stroidTiny.Sets(gfxGenAsteroid(plist, scale, 10.0f, colour), scale))
         return coreBadAlloc();
-    models.stroidTiny.npoints = plist.size() - nlast;
-    nlast += models.stroidTiny.npoints;
 
     // make medium asteroid model
-    models.stroidMed.scale = 2.0f;
+    scale = 2.0f;
     colour.r = 0.2f;  colour.g = 0.3f;  colour.b = 0.4f;
-    bResult = gfxGenAsteroid( plist, models.stroidMed.scale, 15.0f, colour );
-    if ( !bResult )
+    if(models.stroidMed.Sets(gfxGenAsteroid(plist, scale, 15.0f, colour), scale))
         return coreBadAlloc();
-    models.stroidMed.npoints = plist.size() - nlast;
-    nlast += models.stroidMed.npoints;
 
     // make large asteroid model
-    models.stroidBig.scale = 3.0f;
+    scale = 3.0f;
     colour.r = 0.5f;  colour.g = 0.3f;  colour.b = 0.3f;
-    bResult = gfxGenAsteroid( plist, models.stroidBig.scale, 20.0f, colour );
-    if ( !bResult )
+    if(models.stroidBig.Sets(gfxGenAsteroid(plist, scale, 20.0f, colour), scale))
         return coreBadAlloc();
-    models.stroidBig.npoints = plist.size() - nlast;
-    nlast += models.stroidBig.npoints;
 
     // generate starfield
-    models.stars.scale = 1.0f;
-    if ( !gfxGenStars(plist, 50) )
+    scale = 1.0f;
+    if (models.stars.Sets(gfxGenStars(plist, static_cast<int>(1.65e-4 * core.iWidth * core.iHeight)), scale))
         return coreBadAlloc();
-    models.stars.npoints = plist.size() - nlast;
-    nlast += models.stars.npoints;
 
     // all models generated, convert to linear array
-    core.points = new array::block<vertex>( plist );
-    if ( !core.points )
+    core.points = new array::block<vertex>(plist);
+    if(!core.points)
         return coreBadAlloc();
 
     // set ship pointers into linear array
-    models.ship.pBegin = core.points->begin();
-    models.ship.pEnd = models.ship.pBegin + models.ship.npoints;
+    models.ship.Copy(core.points->begin());
+    models.shild.Copy(models.ship.pEnd);
 
     // setup misile model pointers
-    models.misile.pBegin = models.ship.pEnd;
-    models.misile.pEnd = models.misile.pBegin + models.misile.npoints;
+    models.misile.Copy(models.shild.pEnd);
 
     // setup asteroid pointers
-    models.stroidTiny.pBegin = models.misile.pEnd;
-    models.stroidTiny.pEnd = models.stroidTiny.pBegin + models.stroidTiny.npoints;
-    models.stroidMed.pBegin = models.stroidTiny.pEnd;
-    models.stroidMed.pEnd = models.stroidMed.pBegin + models.stroidMed.npoints;
-    models.stroidBig.pBegin = models.stroidMed.pEnd;
-    models.stroidBig.pEnd = models.stroidBig.pBegin + models.stroidBig.npoints;
+    models.stroidTiny.Copy(models.misile.pEnd);
+    models.stroidMed.Copy(models.stroidTiny.pEnd);
+    models.stroidBig.Copy(models.stroidMed.pEnd);
 
     // setup star pointers
-    models.stars.pBegin = models.stroidBig.pEnd;
-    models.stars.pEnd = models.stars.pBegin + models.stars.npoints;
+    models.stars.Copy(models.stroidBig.pEnd);
 
     // all done, initialize game
-    bResult = astNewGame( core, true );
-    if ( !bResult )
+    if(!astNewGame( core, true))
     {
         astDeallocSprites( core );
         return coreBadAlloc();

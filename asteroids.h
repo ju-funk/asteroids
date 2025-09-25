@@ -3,6 +3,12 @@
 // ------------------------------------------------------------------
 #include <vector>
 #include <chrono>
+#include <thread>
+#include <atomic>
+#include <functional>
+#include <mutex>
+#include <condition_variable>
+
 
 class entity
 {
@@ -15,7 +21,8 @@ public:
     void addPos( void );
     void setDir( float angle );
     void addDir( float angle );
-    void swapDir( entity *with );
+    void swapAstDir( entity *with, float speed );
+    void swapSldDir( entity *with, float speed );
     void Spin();
     void swapSpeed( entity *with );
 
@@ -26,7 +33,7 @@ public:
 
     int health;
     DWORD liveTime;
-    enum TypesEnty{None=1, Ship=2, Fire=4, Astro=8};
+    enum TypesEnty{None=1, Ship=2, Fire=4, Astro=8, Shild=16};
     DWORD TypeEnty;
 
     // model pointer and scale
@@ -61,4 +68,146 @@ private:
     kdat& GetKDat(int Key, int extkey);
 };
 
+
+
+class TimerClass
+{
+private:
+    std::atomic<bool> running{ true };   // Thread live
+    std::atomic<bool> active{ false };   // Timer
+    std::atomic<bool> timeElapsed{ false };
+
+    int intervalSeconds{ 0 };
+    std::function<void()> callback = nullptr;
+
+    std::mutex mtx;
+    std::condition_variable cv;
+
+    bool breakOnElapsed = true;
+    int currTime = 0;
+
+    void threadFunc()
+    {
+        std::unique_lock<std::mutex> lock(mtx);
+
+        while (running)
+        {
+            // wait of timer new start 
+            cv.wait(lock, [this] { return active.load() || !running.load(); });
+
+            if (!running)
+                break;
+
+            timeElapsed = false;
+
+            for (currTime = intervalSeconds; currTime > 0; --currTime)
+            {
+                auto wakeUp = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+                while (active && std::chrono::steady_clock::now() < wakeUp)
+                    cv.wait_until(lock, wakeUp);
+
+                if (!active)
+                    break; // Stop/Reset
+            }
+
+            if (!active)
+                continue;
+
+            // time running out
+            timeElapsed = true;
+            if (callback)
+            {
+                lock.unlock();
+                callback();
+                lock.lock();
+                active = false;  // Callback -> Timer stop
+            }
+
+            if (breakOnElapsed)
+                active = false;  // Timer stop
+
+            cv.wait(lock, [this]() { return !timeElapsed.load() || !active.load() || !running.load(); });
+        }
+    }
+
+public:
+    TimerClass()
+    {
+        timerThread = std::thread(&TimerClass::threadFunc, this);
+    }
+
+    ~TimerClass()
+    {
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            running = false;
+            cv.notify_all();
+        }
+
+        if (timerThread.joinable())
+            timerThread.join();
+    }
+
+    void Start(int second, bool breakFlag)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        intervalSeconds = second;
+        breakOnElapsed = breakFlag;
+        callback = nullptr;
+        timeElapsed = false;
+        active = true;
+        cv.notify_one();
+    }
+
+    void Start(std::function<void()> func, int second)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        intervalSeconds = second;
+        callback = func;
+        breakOnElapsed = true;
+        timeElapsed = false;
+        active = true;
+        cv.notify_one();
+    }
+
+    bool IsTime()
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (timeElapsed)
+        {
+            timeElapsed = false;
+            cv.notify_one(); // Timer wakeup
+            return true;
+        }
+        return !active.load();
+    }
+
+    int GetCurrTime()
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (active)
+            return currTime;
+        return 0;
+    }
+
+
+    void Stop()
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        active = false;
+        timeElapsed = false;
+        cv.notify_one();
+    }
+
+    void Reset()
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        timeElapsed = false;
+        active = false;
+        cv.notify_one();
+    }
+
+private:
+    std::thread timerThread;
+};
 

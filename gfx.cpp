@@ -64,36 +64,70 @@ void gfxDrawLoader( coreInfo &info, int Loop)
     }
 }
 
-bool gfxGenShip( array::list<vertex> &output, float detail )
+size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, bool shild )
 {
+    size_t start = output.size();
+
     vertex pt;
     pt.z = 0.0f;
-    for ( float i = 0.0f; i <= 1.0f; i+=detail )
+    float y2 = radius / 2.5f;
+    float y1 = y2 - radius;
+    for ( float i = 0.0f; i <= radius; i+=detail )
     {
         pt.x = i;                                               /*          / \ < this */
-        pt.y = -0.6f + i;                                       /*          --         */
+        pt.y =y1 + i;                                       /*          --         */
         pt.r = 1.0f; pt.g = 0.0f; pt.b = 0.0f;
         if ( !output.push_back(pt) )
-            return false;
+            return 0;
         pt.x = -pt.x;                                           /*   this > / \        */
         if ( !output.push_back(pt) )                            /*          --         */
-            return false;
+            return 0;
 
         pt.x = i;                                               /*          / \        */
-        pt.y = 0.4f;                                            /*          --  < this */
+        pt.y =y2;                                            /*          --  < this */
         pt.r = 0.0f; pt.g = 1.0f; pt.b = 0.0f;
         if ( !output.push_back(pt) )
-            return false;
+            return 0;
         pt.x = -pt.x;                                           /*          / \        */
         if ( !output.push_back(pt) )                            /*   this > --         */
-            return false;
+            return 0;
     }
 
-    return true;
+    if (shild)
+    {
+        radius += 0.5f;
+        for (float radi = 0.0f; radi < 0.2; radi += 0.1f)
+        {
+            for (float radj = 0.0f; radj < M_2PI; radj += detail)
+            {
+                pt.r = 1.0f;
+                pt.g = 1.0f;
+                pt.b = 0.0f;
+
+                // use the cosine of the semi-circle as the radius
+                pt.x = cosf(radj) * (radius - radi);
+                pt.y = sinf(radj) * (radius - radi);
+                pt.z = 0.0f;
+                if (!output.push_back(pt))
+                    return 0;
+
+                // flip y to mirror the half sphere
+                // flip x to reduce artifacts
+                pt.x = -pt.x;
+                pt.y = -pt.y;
+                if (!output.push_back(pt))
+                    return 0;
+            }
+        }
+    }
+
+    return output.size() - start;
 }
 
-bool gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour )
+size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour )
 {
+    size_t start = output.size();
+
     vertex pt;
     float radinc = M_PI / detail;
     // for each point arround a semi-circle
@@ -116,18 +150,18 @@ bool gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, ve
             pt.y = sinf(radi+roffset) * (radius+roffset);
             pt.z = sinf(radj+roffset) * cosf(radi+roffset) * (radius+roffset);
             if ( !output.push_back(pt) )
-                return false;
+                return 0;
 
             // flip y to mirror the half sphere
             // flip x to reduce artifacts
             pt.x = -pt.x;
             pt.y = -pt.y;
             if ( !output.push_back(pt) )
-                return false;
+                return 0;
         }
     }
 
-    return true;
+    return output.size() - start;
 }
 
 void gfxBlinkStars( coreInfo &core )
@@ -142,8 +176,10 @@ void gfxBlinkStars( coreInfo &core )
     
 }
 
-bool gfxGenStars( array::list<vertex> &output, int num )
+size_t gfxGenStars( array::list<vertex> &output, int num )
 {
+    size_t start = output.size();
+
     for ( int i = 0; i < num; ++i )
     {
         float xpos = (0.5f - frand()) * 100.0f;
@@ -152,8 +188,8 @@ bool gfxGenStars( array::list<vertex> &output, int num )
 
         vertex star = { xpos, ypos, 0.0f, colour, colour, colour };
         if ( !output.push_back(star) )
-            return false;
+            return 0;
     }
 
-    return true;
+    return output.size() - start;
 }

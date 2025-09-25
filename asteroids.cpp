@@ -5,6 +5,8 @@
 
 
 KeyMan keys;
+TimerClass tiStayShild;
+TimerClass tiNextShild;
 
 
 inline void astHandleInput( coreInfo &core )
@@ -36,8 +38,8 @@ inline void astHandleInput( coreInfo &core )
         if(keys.GetKeyState(VK_MBUTTON, KeyMan::MustToggle))
             spaceship->pos.g = spaceship->pos.r = 0.0f;
 
-        //if(keys.GetKeyState(VK_RBUTTON, eyMan::MustToggle)) 
-            ; // shild
+        if(keys.GetKeyState(VK_RBUTTON, KeyMan::MustToggle)) 
+            astShipShild(core, true);
 
         if((wheel & 1) == 1)
             spaceship->speed = 0.01f;
@@ -80,8 +82,21 @@ void astDeallocSprites( coreInfo &core )
 void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
 {
     // adjust true x/y positions using next direction step
-    float axdist = enta->pos.x - enta->pos.r * enta->speed;
-    float aydist = enta->pos.y - enta->pos.g * enta->speed;
+
+    float axdist;
+    float aydist;
+
+    if (enta->speed != 0.0)
+    {
+        axdist = enta->pos.x - enta->pos.r * enta->speed;
+        aydist = enta->pos.y - enta->pos.g * enta->speed;
+    }
+    else
+    {   // ship has no speed
+        axdist = enta->pos.x - enta->pos.r;
+        aydist = enta->pos.y - enta->pos.g;
+    }
+
     float bxdist = entb->pos.x - entb->pos.r * entb->speed;
     float bydist = entb->pos.y - entb->pos.g * entb->speed;
 
@@ -99,21 +114,19 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
     float dist = sqrtf( xdif*xdif + ydif*ydif );
     if ( dist < maxdist )
     {
-        // two asteroids collide, switch direction vectors
         DWORD state = enta->TypeEnty | entb->TypeEnty;
-        float oldspeed;
 
-        switch (state)                           //None = 1, Ship = 2, Fire = 4, Astro = 8
+        switch (state)                           //None=1, Ship=2, Fire=4, Astro=8, Shild=16
         {
-        case entity::Astro | entity::Astro:
-            enta->swapDir( entb );
-            enta->swapSpeed( entb );
+        case entity::Shild | entity::Astro:
+            // enta --> shild
+            enta->swapSldDir(entb, maxdist - dist);
+            output.Sound(IDW_ASTSHL);
+            break;
 
-            // prevent asteroids from getting locked together
-            oldspeed = enta->speed;
-            enta->speed = (maxdist - dist);
-            enta->updatePos();
-            enta->speed = oldspeed;
+        case entity::Astro | entity::Astro:
+            // two asteroids collide, switch direction vectors
+            enta->swapAstDir(entb, maxdist - dist);
             output.Sound(IDW_COLAST);
             break;
 
@@ -183,6 +196,44 @@ bool astFireBullet( coreInfo &core )
 
     return true;
 }
+
+void astShipShild(coreInfo& core, bool shild)
+{
+    entity* ship = core.sprites.begin()->value;
+    if (shild)
+    {
+        if (tiNextShild.IsTime())
+        {
+            ship->points = core.models.shild;
+            ship->TypeEnty = entity::Shild;
+            tiStayShild.Start(std::bind(astShipShild, std::ref(core), false), 3);
+            tiNextShild.Start(10, true);
+        }
+    }
+    else
+    {
+        std::lock_guard<std::mutex> lock(core.mtx);
+        ship->points = core.models.ship;
+        ship->TypeEnty = entity::Ship;
+    }
+}
+
+
+int getShildInf()
+{
+    int i = tiStayShild.GetCurrTime();
+    if(i > 0)
+        return i;
+
+    i = tiNextShild.GetCurrTime();
+
+    if(i == 0)
+        return 1;
+    
+    return -i;
+}
+
+
 
 // ------------------------------------------------------------------
 // spawn asteroids in a circle arround point based on old model type
@@ -529,16 +580,61 @@ void entity::updatePos( void )
 // ------------------------------------------------------------------
 // swap direction vectors with another entity
 // ------------------------------------------------------------------
-void entity::swapDir( entity *with )
+void entity::swapAstDir( entity *with, float Speed )
 {
     vertex temp = with->pos;
     with->pos.r = pos.r;
     with->pos.g = pos.g;
-    with->pos.b = pos.b;
     pos.r = temp.r;
     pos.g = temp.g;
-    pos.b = temp.b;
+
+    swapSpeed(with);
+    // prevent asteroids from getting locked together
+    float oldspeed = speed;
+    speed = Speed;
+    updatePos();
+    speed = oldspeed;
 }
+
+void entity::swapSldDir(entity* with, float Speed)
+{
+    if(pos.r == 0.0f)
+        pos.r = -with->pos.r / 3;
+
+    with->pos.r = -with->pos.r;
+   
+    if(pos.g == 0.0f)
+        pos.g = -with->pos.g / 3;
+
+    with->pos.g = -with->pos.g;
+
+    pos.r = -pos.r;
+    pos.g = -pos.g;
+
+    float v1 = pos.r + pos.g;
+    float v2 = with->pos.r + with->pos.r;
+
+    if (((v1 < 0.0f) && (v2 < 0.0f)) || ((v1 > 0.0f) && (v2 > 0.0f)))
+    {
+        if (fabsf(v1) > fabsf(v2))
+        {
+            with->pos.r = -with->pos.r;
+            with->pos.g = -with->pos.g;
+        }
+        else
+        {
+            pos.r = -pos.r;
+            pos.g = -pos.g;
+        }
+    }
+
+    addDir(0.0f);
+    speed = Speed;
+    updatePos();
+    speed = 0.0f;
+}
+
+
 
 // ------------------------------------------------------------------
 // swap speeds with another entity
