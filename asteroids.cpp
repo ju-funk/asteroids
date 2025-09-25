@@ -301,25 +301,13 @@ bool astUpdateState( coreInfo &core )
     // check for game over
     array::list<entity*>::iterator i = core.sprites.begin();
     entity *sprite = *i;
-    if ( !sprite->health)
+    if (sprite->checkShip())
     {
-        if (sprite->scale < 1.12f)
-            output.Sound(IDW_SHIPEX);
-
-        if (sprite->scale > 5.0f)
-        {
-            if (!astNewGame(core, true))
-                return coreBadAlloc();
-            else
-                return true;
-        }
+        if (!astNewGame(core, true))
+            return coreBadAlloc();
         else
-            sprite->scale += 0.02f;
+            return true;
     }
-
-    // move ship
-    sprite->addDir(sprite->rz );
-    sprite->addPos();
 
     // process all other sprites
     int astCount = 0;
@@ -529,6 +517,27 @@ entity::entity( model &source, float xpos, float ypos )
     // temp health point
     health   = 1;
     liveTime = 0;
+}
+
+
+bool entity::checkShip()
+{
+    if (!health)
+    {
+        if (scale < 1.12f)
+            output.Sound(IDW_SHIPEX);
+
+        if (scale > 5.0f)
+            return true;
+        else
+            scale += 0.02f;
+    }
+
+    // move ship
+    addDir(rz);
+    addPos();
+
+    return false;
 }
 
 
