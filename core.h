@@ -15,6 +15,8 @@ struct coreInfo
     int iSize;
     HDC hDC;
 
+    std::mutex mtx;
+
     // vertex array
     array::block<vertex> *points;
 
@@ -26,7 +28,7 @@ struct coreInfo
     // group the models in a struct
     struct modPtrs
     {
-        model ship, misile, stars;
+        model ship, shild, misile, stars;
         model stroidTiny, stroidMed, stroidBig;
     } models;
 
@@ -41,12 +43,14 @@ void gfxDrawLoader( coreInfo &info, int loop );
 void gfxBlinkStars( coreInfo &core );
 void astWrapSprite( coreInfo &core, entity &sprite );
 bool astFireBullet( coreInfo &core );
+void astShipShild( coreInfo &core, bool shild);
+int  getShildInf();
 bool astNewGame( coreInfo &core, bool newgame );
 bool astUpdateState( coreInfo &core );
 void astDeallocSprites( coreInfo &core );
 void astCheckCollision( coreInfo &core, entity *enta, entity *entb );
 
 // thread entry proceedures in core.cpp
-int coreMainThread( );
-int coreLoaderThread( coreInfo &core );
+int  coreMainThread( );
+int  coreLoaderThread( coreInfo &core );
 bool coreBadAlloc( void );

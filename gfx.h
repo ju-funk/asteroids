@@ -46,11 +46,24 @@ struct model
     array::block<vertex>::size_type npoints;
     array::block<vertex>::iterator pBegin;
     array::block<vertex>::iterator pEnd;
+
+    void Copy(array::block<vertex>::iterator Start)
+    {
+        pBegin = Start;
+        pEnd   = Start + npoints;
+    }
+
+    bool Sets(array::block<vertex>::size_type size, float Scale)
+    {
+        scale   = Scale;
+        npoints = size;
+        return size == 0;
+    }
 };
 
 // prototypes from gfx.cpp
 inline float frand( void );
 inline unsigned long int gfxRGB( float r, float g, float b );
-bool gfxGenShip( array::list<vertex> &output, float detail );
-bool gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour );
-bool gfxGenStars( array::list<vertex> &output, int num );
+size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, bool shild );
+size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour );
+size_t gfxGenStars( array::list<vertex> &output, int num );
