@@ -418,7 +418,10 @@ bool astNewGame( coreInfo &core, bool newgame )
         {
             --core.Ships;
             if (core.Ships == 0)
+            {
                 astNewGame(core, true);
+                return true;
+            }
         }
     }
     else // new ship
