@@ -248,7 +248,9 @@ bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
 
     // choose sprite details based on old model type
     model newType = core.models.stroidTiny;
-    int iSpawnCount = 3, iHealth = 1;
+    int fac = core.iGameLevel - 2;
+    int iSpawnCount = 3 + fac;
+    int iHealth = 1 + fac;
     float typeScale = models.stroidTiny.scale + 1.0f;
 
     if ( type == 0 ) // spawn large asteroids
@@ -256,13 +258,14 @@ bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
         newType = models.stroidBig;
         typeScale = 15.0f;
         iSpawnCount = core.iGameLevel;
-        iHealth = 3;
+        iHealth = 3 + fac;
     }
     else if ( type->pBegin == models.stroidBig.pBegin )
     {
         newType = models.stroidMed;
         typeScale = models.stroidMed.scale + 1.0f;
-        iSpawnCount = 2; iHealth = 2;
+        iSpawnCount = 2 + fac;
+        iHealth = 2 + fac;
     }
     // else model is tiny asteroid
 
@@ -279,7 +282,7 @@ bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
         if ( !sprite )
             return false;
         sprite->TypeEnty = entity::Astro;
-        sprite->speed = 0.1f + 0.2f * frand();
+        sprite->speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
         sprite->health = iHealth;
 
         // set random direction, add to sprite list
@@ -328,8 +331,8 @@ bool astUpdateState( coreInfo &core )
             {
                 if (IsAstro)
                 {
-                    core.Score += 10;
-                    core.Fires += 5;
+                    core.Score += 10 * (core.iGameLevel + 2);
+                    core.Fires += 3 + core.iGameLevel;
                 }
                 else if(sprite->currFire == 0 && core.Fires == 0)
                 {
@@ -432,7 +435,7 @@ bool astNewGame( coreInfo &core, bool newgame )
         nship.TypeEnty = entity::Ship;
         *ship = nship;
         if(core.Fires == 0) 
-            core.Fires = 3;
+            core.Fires = 3 + core.iGameLevel;
 
         return true;
     }
