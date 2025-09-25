@@ -149,10 +149,6 @@ public:
     block( list<T> &source );
     ~block( void ) { delete [] pBegin; }
 
-    // object control
-    void init( T value );
-    void clear( void ) { init( 0 ); }
-
     // member accessors
     size_type size( void ) { return blockSize; }
     iterator begin( void ) { return pBegin; }
@@ -211,18 +207,6 @@ array::block<T>::block( list<T> &source )
     wasInitialized = true;
 }
 
-
-// ------------------------------------------------------------------
-// block object: init - initialize block to value
-// ------------------------------------------------------------------
-template <class T>
-void array::block<T>::init( T value )
-{
-    for ( iterator i = begin(); i != end(); ++i )
-    {
-        *i = value;
-    }
-}
 
 // ------------------------------------------------------------------
 // list object. allows dynamic allocation of any data type
