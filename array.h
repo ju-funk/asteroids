@@ -320,12 +320,7 @@ array::list<T>::list( void )
 template <class T>
 array::list<T>::~list( void )
 {
-    // for each node, remove the previous one
-    while ( pEnd->pPrev )
-    {
-        pEnd = pEnd->pPrev;
-        delete pEnd->pNext;
-    }
+    clear();
 
     // finally, delete the starting node
     delete pBegin;
