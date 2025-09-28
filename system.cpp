@@ -243,27 +243,85 @@ bool sys::screen::doEvents( void )
     return true;
 }
 
+#ifdef _DEBUG
+void sys::screen::DebugOut(const TCHAR* pszFmt, ...)
+{
+    va_list ptr; 
+    va_start(ptr, pszFmt);
+    TCHAR buf[300];
+    buf[0] = 0;
+    _vstprintf_s(buf, 300, pszFmt, ptr);
+    OutputDebugString(buf);
+    va_end(ptr);
+
+}
+#endif // DEBUG
+
+
+
+sys::screen::mptSnd sys::screen::OpenWave(stSound *Snd)
+{
+    size_t i = Snd->key++;
+
+    mptSnd itsnd = Snd->vSound.insert({ i, vtSound(i, Snd) });
+
+    //DebugOut(_T("Open               stSP : %p, vtSP : %p, Key : %03i, SizeMap : %03i\n"), Snd, &itsnd.first->second, i, Snd->vSound.size());
+
+    MMRESULT res = waveOutOpen(&itsnd.first->second.hWaveOut, WAVE_MAPPER, &Snd->wfx,
+        (DWORD_PTR)WaveOutProc, (DWORD_PTR) &itsnd.first->second, CALLBACK_FUNCTION);
+
+    if (res != MMSYSERR_NOERROR)
+    {
+        userNotice(_T("Unable to register sound."), true);
+        return mptSnd(Snd->vSound.end(), false);
+    }
+    else
+    {
+        itsnd.first->second.waveHdr.lpData = reinterpret_cast<LPSTR>(Snd->buffer);
+        itsnd.first->second.waveHdr.dwBufferLength = Snd->size;
+        itsnd.first->second.waveHdr.dwFlags = 0;
+        itsnd.first->second.waveHdr.dwLoops = 0;
+        itsnd.first->second.waveHdr.dwFlags = 0;
+        waveOutPrepareHeader(itsnd.first->second.hWaveOut, &itsnd.first->second.waveHdr, sizeof(WAVEHDR));
+    }
+
+    return itsnd;
+}
+
 
 void sys::screen::Sound(WORD id)
 {
-    sSound& Snd = pWaves[id - IDW_OFFSET];
+    stSound *Snd = &pWaves[id - IDW_OFFSET];
 
-    if (!Snd.prepared) 
+    mptSnd it(std::find_if(Snd->vSound.begin(), Snd->vSound.end(), [](auto& snd) {return snd.second.prepared == false; }), true);
+    if (it.first == Snd->vSound.end())
+        it = OpenWave(Snd); 
+
+   // DebugOut(_T("Sound              stSP : %p, vtSP : %p, Key : %03i, Id  : %03i\n"), Snd, it.first->second, it.first->second.Idx, id - IDW_OFFSET);
+
+    if (it.second)
     {
-        Snd.prepared = true;
-        waveOutPrepareHeader(Snd.hWaveOut, &Snd.waveHdr, sizeof(WAVEHDR));
-        waveOutWrite(Snd.hWaveOut, &Snd.waveHdr, sizeof(WAVEHDR));
+        it.first->second.prepared = true;
+        waveOutWrite(it.first->second.hWaveOut, &it.first->second.waveHdr, sizeof(WAVEHDR));
     }
 }
 
 
 void CALLBACK sys::screen::WaveOutProc(HWAVEOUT hwo, UINT uMsg,DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
 {
-    if (uMsg == WOM_DONE) 
+//    DebugOut(_T("OutProc Msg : %u, stSP : %p, vtSP : %p, Key : %03i, Handle : %p = %p\n"), uMsg, sound->bSound, sound, sound->Idx, hwo, sound->hWaveOut);
+    
+    switch(uMsg) 
     {
-        sSound* sound = reinterpret_cast<sSound*>(dwInstance);
-        waveOutUnprepareHeader(sound->hWaveOut, &sound->waveHdr, sizeof(WAVEHDR));
-        sound->prepared = false;
+    case WOM_OPEN:
+    case WOM_CLOSE:
+        break;
+    case WOM_DONE:
+        vtSound *sound = reinterpret_cast<vtSound *>(dwInstance);
+        if (sound->Idx > 7)
+            sound->bSound->vSound.erase(sound->Idx);
+        else
+            sound->prepared = false;
     }
 }
 
@@ -272,25 +330,25 @@ bool sys::screen::LoadWaves()
 {
     const char dataId[] = "data";
     
-    auto LoadWave = [&](WORD id, sSound &snd) -> bool
+    auto LoadWave = [&](WORD id, stSound *snd) -> bool
     {
         HRSRC hRes = FindResource(hInstance, MAKEINTRESOURCE(id), _T("WAVE"));
         if (hRes)
         {
             HGLOBAL hData = LoadResource(hInstance, hRes);
-            snd.size = SizeofResource(hInstance, hRes);
+            snd->size = SizeofResource(hInstance, hRes);
 
             if (hData)
             {
-                snd.buffer = reinterpret_cast<BYTE*>(LockResource(hData));
-                memcpy(reinterpret_cast<BYTE*>(&snd.wfx), snd.buffer + StartHeader, sizeof(WAVEFORMATEX));
+                snd->buffer = reinterpret_cast<BYTE*>(LockResource(hData));
+                memcpy(reinterpret_cast<BYTE*>(&snd->wfx), snd->buffer + StartHeader, sizeof(WAVEFORMATEX));
 
-                auto it = std::search(snd.buffer, snd.buffer + snd.size, dataId, dataId + 4);
-                if (it != snd.buffer + snd.size)
+                auto it = std::search(snd->buffer, snd->buffer + snd->size, dataId, dataId + 4);
+                if (it != snd->buffer + snd->size)
                 {
                     DWORD* size = reinterpret_cast<DWORD*>(it + 4);
-                    snd.buffer = it + 8;
-                    snd.size = *size;
+                    snd->buffer = it + 8;
+                    snd->size = *size;
 
                     return true;
                 }
@@ -304,26 +362,17 @@ bool sys::screen::LoadWaves()
 
     for (WORD i = IDW_START; i < IDW_ENDWAV; ++i)
     {
-        sSound &Snd = pWaves[i - IDW_OFFSET];
+        stSound *Snd = &pWaves[i - IDW_OFFSET];
         if (!LoadWave(i, Snd))
         {
             userNotice(_T("Unable to Load sound."), true);
             return false;
         }
 
-        MMRESULT res = waveOutOpen(&Snd.hWaveOut, WAVE_MAPPER, &Snd.wfx,
-                 (DWORD_PTR)WaveOutProc, (DWORD_PTR)&Snd, CALLBACK_FUNCTION);
+        mptSnd it = OpenWave(Snd);
 
-        if (res != MMSYSERR_NOERROR) 
-        {
-            userNotice(_T("Unable to register sound."), true);
+        if (!it.second )
             return false;
-        }
-
-        Snd.waveHdr.lpData = reinterpret_cast<LPSTR>(Snd.buffer);
-        Snd.waveHdr.dwBufferLength = Snd.size;
-        Snd.waveHdr.dwFlags = 0;
-        Snd.waveHdr.dwLoops = 0;
     }
 
     return true;
@@ -333,8 +382,13 @@ void sys::screen::CleanWave()
 {
     for (WORD i = IDW_START; i < IDW_ENDWAV; ++i)
     {
-        sSound& Snd = pWaves[i - IDW_OFFSET];
-        waveOutClose(Snd.hWaveOut);
+        stSound& Snd = pWaves[i - IDW_OFFSET];
+
+        for (auto& vsnd : Snd.vSound)
+        {
+            waveOutUnprepareHeader(vsnd.second.hWaveOut, &vsnd.second.waveHdr, sizeof(WAVEHDR));
+            waveOutClose(vsnd.second.hWaveOut);
+        }
     }
 }
 

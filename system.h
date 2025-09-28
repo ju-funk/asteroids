@@ -1,6 +1,7 @@
 #include "resource.h"
 #include <mmsystem.h>
 #include <algorithm>
+#include <map>
 
 
 // SYSTEM OBJECT DECLERATIONS
@@ -54,6 +55,14 @@ public:
     void SetInputState(UINT uMsg, WPARAM wParam, LPARAM lParam);
     void Sound(WORD id);
 
+
+#ifdef _DEBUG
+    static void DebugOut(const TCHAR* pszFmt, ...);
+#else
+    #define DebugOut
+#endif // DEBUG
+
+
 private:
     // main init function
     bool create( bool topMost, bool hasCaption, bool scrCenter );
@@ -85,23 +94,41 @@ private:
     int iWidth;
     int iHeight;
 
-    // waves
-    static void CALLBACK WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
 
     const WORD StartHeader = 20;
     const WORD WaveStartData = StartHeader + 24;
-    struct sSound 
+   
+    struct stSound;
+    struct vtSound
     {
+        bool prepared = false;
         HWAVEOUT hWaveOut = nullptr;
         WAVEHDR waveHdr = {};
+        size_t  Idx;
+        stSound *bSound;
+        vtSound(size_t idx, stSound *sound) : Idx{idx}, bSound {sound} {}
+    };
+
+    using mtSnd   = std::map<size_t, vtSound>;
+    using vtSndIt = mtSnd::iterator;
+    using mptSnd  = std::pair<vtSndIt, bool>; 
+    
+
+    struct stSound
+    {
         BYTE *buffer = nullptr;
         DWORD size = 0;
         WAVEFORMATEX wfx = {};
-        bool prepared = false;
+
+        size_t key = 0;
+        mtSnd vSound;
     };
 
+    // waves
+    static void CALLBACK WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
+    mptSnd OpenWave(stSound *Snd);
 
-    sSound pWaves[IDW_ENDWAV - IDW_OFFSET];
+    stSound pWaves[IDW_ENDWAV - IDW_OFFSET];
 
     RECT rSize;
     TCHAR *szClass;
