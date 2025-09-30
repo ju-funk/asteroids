@@ -3,16 +3,16 @@
 // Verwendet durch asteroids.rc
 //
 #define IDW_OFFSET                     100
-#define IDW_START                      101
-#define IDW_LEVEL                      102
-#define IDW_FIRESH                     103
-#define IDW_COLAST                     104
-#define IDW_ASTHIT                     105
-#define IDW_ASTEXP                     106
-#define IDW_ASTSHL                     107
-#define IDW_SHIPEX                     108
-#define IDW_FIRWAR                     109
-#define IDW_ENDWAV                     110
+#define IDW_START                      IDW_OFFSET
+#define IDW_LEVEL                      101
+#define IDW_FIRESH                     102
+#define IDW_COLAST                     103
+#define IDW_ASTHIT                     104
+#define IDW_ASTEXP                     105
+#define IDW_ASTSHL                     106
+#define IDW_SHIPEX                     107
+#define IDW_FIRWAR                     108
+#define IDW_ENDWAV                     109
 
 // Next default values for new objects
 // 

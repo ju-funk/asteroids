@@ -98,21 +98,24 @@ private:
     const WORD StartHeader = 20;
     const WORD WaveStartData = StartHeader + 24;
    
-    struct stSound;
     struct vtSound
     {
-        bool prepared = false;
+        enum tprep {Del=0, Use=1, FreeInUse=2, Mask=3};
+        tprep prepared = Use;        // bit 0 = 0 can erase,  = 1 sound usable
+                                     // bit 1 = 0 sound free, = 1 sound in use
+        void operator|=(tprep a) {prepared = static_cast<tprep>(static_cast<int>(prepared) |  static_cast<int>(a));}
+        void operator&=(tprep a) {prepared = static_cast<tprep>(static_cast<int>(prepared) & ~static_cast<int>(a));}
+
         HWAVEOUT hWaveOut = nullptr;
         WAVEHDR waveHdr = {};
         size_t  Idx;
-        stSound *bSound;
-        vtSound(size_t idx, stSound *sound) : Idx{idx}, bSound {sound} {}
+        vtSound(size_t idx) : Idx{idx} {}
     };
 
     using mtSnd   = std::map<size_t, vtSound>;
-    using vtSndIt = mtSnd::iterator;
-    using mptSnd  = std::pair<vtSndIt, bool>; 
-    
+    using mptSnd  = std::pair<const size_t, vtSound>;
+    using mtSndIt = mtSnd::iterator;
+    using mpbtSnd = std::pair<mtSndIt, bool>;
 
     struct stSound
     {
@@ -126,7 +129,9 @@ private:
 
     // waves
     static void CALLBACK WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
-    mptSnd OpenWave(stSound *Snd);
+    mpbtSnd OpenWave(stSound *Snd);
+    void CloseWave(vtSound& vsnd);
+
 
     stSound pWaves[IDW_ENDWAV - IDW_OFFSET];
 

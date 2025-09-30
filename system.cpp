@@ -259,11 +259,11 @@ void sys::screen::DebugOut(const TCHAR* pszFmt, ...)
 
 
 
-sys::screen::mptSnd sys::screen::OpenWave(stSound *Snd)
+sys::screen::mpbtSnd sys::screen::OpenWave(stSound *Snd)
 {
     size_t i = Snd->key++;
 
-    mptSnd itsnd = Snd->vSound.insert({ i, vtSound(i, Snd) });
+    mpbtSnd itsnd = Snd->vSound.insert({ i, vtSound(i) });
 
     //DebugOut(_T("Open               stSP : %p, vtSP : %p, Key : %03i, SizeMap : %03i\n"), Snd, &itsnd.first->second, i, Snd->vSound.size());
 
@@ -273,7 +273,7 @@ sys::screen::mptSnd sys::screen::OpenWave(stSound *Snd)
     if (res != MMSYSERR_NOERROR)
     {
         userNotice(_T("Unable to register sound."), true);
-        return mptSnd(Snd->vSound.end(), false);
+        return mpbtSnd(Snd->vSound.end(), false);
     }
     else
     {
@@ -293,7 +293,7 @@ void sys::screen::Sound(WORD id)
 {
     stSound *Snd = &pWaves[id - IDW_OFFSET];
 
-    mptSnd it(std::find_if(Snd->vSound.begin(), Snd->vSound.end(), [](auto& snd) {return snd.second.prepared == false; }), true);
+    mpbtSnd it(std::find_if(Snd->vSound.begin(), Snd->vSound.end(), [](auto& snd) {return (snd.second.prepared & vtSound::Mask) == vtSound::Use; }), true);
     if (it.first == Snd->vSound.end())
         it = OpenWave(Snd); 
 
@@ -301,9 +301,22 @@ void sys::screen::Sound(WORD id)
 
     if (it.second)
     {
-        it.first->second.prepared = true;
+        it.first->second |= vtSound::FreeInUse;
         waveOutWrite(it.first->second.hWaveOut, &it.first->second.waveHdr, sizeof(WAVEHDR));
     }
+
+    // close too many sound handles
+    for (mtSndIt its = Snd->vSound.begin(); its != Snd->vSound.end(); )
+    {
+        if ((its->second.prepared & vtSound::Use) == vtSound::Del) 
+        {
+            CloseWave(its->second);
+            its = Snd->vSound.erase(its);
+        }
+        else 
+            ++its;
+    }
+
 }
 
 
@@ -318,10 +331,10 @@ void CALLBACK sys::screen::WaveOutProc(HWAVEOUT hwo, UINT uMsg,DWORD_PTR dwInsta
         break;
     case WOM_DONE:
         vtSound *sound = reinterpret_cast<vtSound *>(dwInstance);
-        if (sound->Idx > 7)
-            sound->bSound->vSound.erase(sound->Idx);
+        if (sound->Idx > 5)   // close sound handles when over
+            sound->prepared = vtSound::Del;
         else
-            sound->prepared = false;
+            *sound &= vtSound::FreeInUse;
     }
 }
 
@@ -369,7 +382,7 @@ bool sys::screen::LoadWaves()
             return false;
         }
 
-        mptSnd it = OpenWave(Snd);
+        mpbtSnd it = OpenWave(Snd);
 
         if (!it.second )
             return false;
@@ -378,17 +391,23 @@ bool sys::screen::LoadWaves()
     return true;
 }
 
+void sys::screen::CloseWave(vtSound& vsnd)
+{
+    waveOutUnprepareHeader(vsnd.hWaveOut, &vsnd.waveHdr, sizeof(WAVEHDR));
+    waveOutReset(vsnd.hWaveOut);
+    waveOutClose(vsnd.hWaveOut);
+}
+
 void sys::screen::CleanWave()
 {
     for (WORD i = IDW_START; i < IDW_ENDWAV; ++i)
     {
         stSound& Snd = pWaves[i - IDW_OFFSET];
 
-        for (auto& vsnd : Snd.vSound)
-        {
-            waveOutUnprepareHeader(vsnd.second.hWaveOut, &vsnd.second.waveHdr, sizeof(WAVEHDR));
-            waveOutClose(vsnd.second.hWaveOut);
-        }
+        for (mptSnd& vsnd : Snd.vSound)
+            CloseWave(vsnd.second);
+
+        Snd.vSound.clear();
     }
 }
 
