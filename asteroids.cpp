@@ -12,7 +12,7 @@ TimerClass tiNextShild;
 inline void astHandleInput( coreInfo &core )
 {
     // a pointer to our spaceship
-    entity *spaceship = core.sprites.begin()->value;
+    entity *spaceship = &*core.sprites.begin();
     if(spaceship->health == 0)
         return;
 
@@ -69,11 +69,7 @@ inline void astHandleInput( coreInfo &core )
 // ------------------------------------------------------------------
 void astDeallocSprites( coreInfo &core )
 {
-    while ( core.sprites.size() )
-    {
-        entity *sprite = core.sprites.pop_back();
-        delete sprite;
-    }
+    core.sprites.clear();
 }
 
 // ------------------------------------------------------------------
@@ -162,48 +158,43 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
 // ------------------------------------------------------------------
 // spawn bullet sprite from current position using ships direction
 // ------------------------------------------------------------------
-bool astFireBullet( coreInfo &core )
+void astFireBullet( coreInfo &core )
 {
     if(core.Fires == 0)
-        return true;
+        return;
 
     // copy angle from players space ship
     // allocate new sprite using bullet model
-    entity *ship = core.sprites.begin()->value;
-    entity *bullet = new entity( core.models.misile, 0.0f, 0.0f );
-    if ( !bullet )  
-        return false;
+    entity *ship = &*core.sprites.begin();
+    entity bullet( core.models.misile, 0.0f, 0.0f );
 
     // copy position
-    bullet->pos = ship->pos;
+    bullet.pos = ship->pos;
 
     // prevent bullet colliding with ship
-    bullet->speed = core.models.ship.scale;
-    bullet->addDir( ship->rz );
-    bullet->addPos();
+    bullet.speed = core.models.ship.scale;
+    bullet.addDir( ship->rz );
+    bullet.addPos();
 
     // set actual speed and set direction
-    bullet->speed = 0.7f;
-    bullet->setDir( ship->rz );
-    bullet->TypeEnty = entity::Fire;
-    bullet->liveTime = static_cast<DWORD>(40 / bullet->speed) + 1;
-    bullet->currFire = --core.Fires;
+    bullet.speed = 0.7f;
+    bullet.setDir( ship->rz );
+    bullet.TypeEnty = entity::Fire;
+    bullet.liveTime = static_cast<DWORD>(40 / bullet.speed) + 1;
+    bullet.currFire = --core.Fires;
     if (core.Fires == 2)
         output.Sound(IDW_FIRWAR);
 
     // add bullet to active sprite list
-    if ( !core.sprites.push_back(bullet) )
-        return false;
+    core.sprites.push_back(bullet);
 
 
     output.Sound(IDW_FIRESH);
-
-    return true;
 }
 
 void astShipShild(coreInfo& core, bool shild)
 {
-    entity* ship = core.sprites.begin()->value;
+    entity* ship = &*core.sprites.begin();
     if (shild)
     {
         if (tiNextShild.IsTime())
@@ -242,7 +233,7 @@ int getShildInf()
 // ------------------------------------------------------------------
 // spawn asteroids in a circle arround point based on old model type
 // ------------------------------------------------------------------
-bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
+void astSpawnStroids( coreInfo &core, model *type, vertex &where )
 {
     coreInfo::modPtrs &models = core.models;
 
@@ -278,46 +269,41 @@ bool astSpawnStroids( coreInfo &core, model *type, vertex &where )
         float ypos = where.y + sinf(posrad) * typeScale;
 
         // make asteroid sprite using player values
-        entity *sprite = new entity( newType, xpos, ypos );
-        if ( !sprite )
-            return false;
-        sprite->TypeEnty = entity::Astro;
-        sprite->speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
-        sprite->health = iHealth;
+        entity sprite( newType, xpos, ypos );
+        sprite.TypeEnty = entity::Astro;
+        sprite.speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
+        sprite.health = iHealth;
 
         // set random direction, add to sprite list
-        sprite->setDir( posrad );
-        if ( !core.sprites.push_back(sprite) )
-            return false;
+        sprite.setDir( posrad );
+        core.sprites.push_back(sprite);
     }
-
-    return true;
 }
 
 // ------------------------------------------------------------------
 // game variable update function, called before screen is redrawn
 // ------------------------------------------------------------------
-bool astUpdateState( coreInfo &core )
+void astUpdateState( coreInfo &core )
 {
     // handle key events
     astHandleInput(core);
 
     // check for game over
-    array::list<entity*>::iterator i = core.sprites.begin();
-    entity *ship = *i;
+    array::list<entity>::iterator i = core.sprites.begin();
+    entity *ship = &*i;
+    ++i;
     if (ship->checkShip())
     {
-        if (!astNewGame(core, true))
-            return coreBadAlloc();
-        else
-            return true;
+        astNewGame(core, true);
+        return;
     }
 
     // process all other sprites
     int astCount = 0;
-    for ( ++i, ++i; i != core.sprites.end(); ++i )
+    ++i;
+    while(i != core.sprites.end())
     {
-        entity *sprite = *i;
+        entity *sprite = &*i;
         bool IsAstro = sprite->TypeEnty & entity::Astro;
 
         // count number of asteroids
@@ -343,31 +329,31 @@ bool astUpdateState( coreInfo &core )
                 }
 
                 // entity exploded, remove from list
-                delete sprite;
-                core.sprites.remove( i );
+                i = core.sprites.erase(i);
             }
             else  // entity still exploding
             {
                 // if dead, but not yet replaced with smaller asteroids
-                if ( !sprite->health  && IsAstro )
+                if ( !sprite->health && IsAstro )
                 {
                     // replace with smaller asteroids
                     if ( sprite->points.pBegin != core.models.stroidTiny.pBegin )
-                    {
-                        if ( !astSpawnStroids( core, &sprite->points, sprite->pos ) )
-                            return coreBadAlloc();
-                    }
+                        astSpawnStroids( core, &sprite->points, sprite->pos );
 
                     // set "children spawned" flag
                     sprite->health = -1;
                 }
                 // keep exploding
                 sprite->scale += 0.1f;
+
+                ++i;
             }
 
             // next entity, this one is doomed
             continue;
         }
+        else
+            ++i;
 
         sprite->Spin();
 
@@ -376,21 +362,16 @@ bool astUpdateState( coreInfo &core )
 
     // if no asteroids left, level up!
     if ( !astCount )
-    {
-        if ( !astNewGame(core, false) )
-            return coreBadAlloc();
-    }
+        astNewGame(core, false);
 
     // make stars twinkle :D
     gfxBlinkStars( core );
-
-    return true;
 }
 
 // ------------------------------------------------------------------
 // reset game. add asteroids, reset health points .etc
 // ------------------------------------------------------------------
-bool astNewGame( coreInfo &core, bool newgame )
+void astNewGame( coreInfo &core, bool newgame )
 {
     // get rid of any bullets
 
@@ -415,14 +396,14 @@ bool astNewGame( coreInfo &core, bool newgame )
         output.Sound(IDW_LEVEL);
         gfxDrawLoader(core, 2);
 
-        entity* ship = core.sprites.begin()->value;
-        if (ship->scale > 1.0)
+        entity *ship = &*core.sprites.begin();
+        if (ship->scale > 1.0 && ship->health == 1)
         {
             --core.Ships;
             if (core.Ships == 0)
             {
                 astNewGame(core, true);
-                return true;
+                return;
             }
         }
     }
@@ -430,41 +411,29 @@ bool astNewGame( coreInfo &core, bool newgame )
     {
         --core.Ships;
         gfxDrawLoader(core, 1);
-        entity* ship = core.sprites.begin()->value;
+        entity* ship = &*core.sprites.begin();
         entity nship(core.models.ship, 0.0f, 0.0f);
         nship.TypeEnty = entity::Ship;
         *ship = nship;
         if(core.Fires == 0) 
             core.Fires = 3 + core.iGameLevel;
 
-        return true;
+        return;
     }
 
     astDeallocSprites(core);
 
     // ship entity must always be first
-    entity* player = new entity(core.models.ship, 0.0f, 0.0f);
-    player->TypeEnty = entity::Ship;
-    if (!player)
-        return false;
-    bool bResult = core.sprites.push_back(player);
-    if (!bResult)
-        return false;
+    entity player(core.models.ship, 0.0f, 0.0f);
+    player.TypeEnty = entity::Ship;
+    core.sprites.push_back(player);
 
     // add starfield
-    entity* starfield = new entity(core.models.stars, 0.0f, 0.0f);
-    if (!starfield)
-        return false;
-    bResult = core.sprites.push_back(starfield);
-    if (!bResult)
-        return false;
+    entity starfield(core.models.stars, 0.0f, 0.0f);
+    core.sprites.push_back(starfield);
 
     // populate space
-    bResult = astSpawnStroids(core, 0, player->pos);
-    if (!bResult)
-        return false;
-
-    return true;
+    astSpawnStroids(core, 0, player.pos);
 }
 
 // unused since perspective turned off

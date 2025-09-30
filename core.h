@@ -18,12 +18,12 @@ struct coreInfo
     std::mutex mtx;
 
     // vertex array
-    array::block<vertex> *points;
+    array::block<vertex> points;
 
     // list of active entities
     // the players sprite is always
     // first in the list
-    array::list<entity*> sprites;
+    array::list<entity> sprites;
 
     // group the models in a struct
     struct modPtrs
@@ -42,11 +42,11 @@ struct coreInfo
 void gfxDrawLoader( coreInfo &info, int loop );
 void gfxBlinkStars( coreInfo &core );
 void astWrapSprite( coreInfo &core, entity &sprite );
-bool astFireBullet( coreInfo &core );
+void astFireBullet( coreInfo &core );
 void astShipShild( coreInfo &core, bool shild);
 int  getShildInf();
-bool astNewGame( coreInfo &core, bool newgame );
-bool astUpdateState( coreInfo &core );
+void astNewGame( coreInfo &core, bool newgame );
+void astUpdateState( coreInfo &core );
 void astDeallocSprites( coreInfo &core );
 void astCheckCollision( coreInfo &core, entity *enta, entity *entb );
 

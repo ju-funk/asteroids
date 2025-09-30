@@ -75,22 +75,18 @@ size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, boo
     for ( float i = 0.0f; i <= radius; i+=detail )
     {
         pt.x = i;                                               /*          / \ < this */
-        pt.y =y1 + i;                                       /*          --         */
+        pt.y =y1 + i;                                           /*          --         */
         pt.r = 1.0f; pt.g = 0.0f; pt.b = 0.0f;
-        if ( !output.push_back(pt) )
-            return 0;
+        output.push_back(pt);
         pt.x = -pt.x;                                           /*   this > / \        */
-        if ( !output.push_back(pt) )                            /*          --         */
-            return 0;
+        output.push_back(pt);                                   /*          --         */
 
         pt.x = i;                                               /*          / \        */
-        pt.y =y2;                                            /*          --  < this */
+        pt.y =y2;                                               /*          --  < this */
         pt.r = 0.0f; pt.g = 1.0f; pt.b = 0.0f;
-        if ( !output.push_back(pt) )
-            return 0;
+        output.push_back(pt);
         pt.x = -pt.x;                                           /*          / \        */
-        if ( !output.push_back(pt) )                            /*   this > --         */
-            return 0;
+        output.push_back(pt);                                   /*   this > --         */
     }
 
     if (shild)
@@ -108,15 +104,13 @@ size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, boo
                 pt.x = cosf(radj) * (radius - radi);
                 pt.y = sinf(radj) * (radius - radi);
                 pt.z = 0.0f;
-                if (!output.push_back(pt))
-                    return 0;
+                output.push_back(pt);
 
                 // flip y to mirror the half sphere
                 // flip x to reduce artifacts
                 pt.x = -pt.x;
                 pt.y = -pt.y;
-                if (!output.push_back(pt))
-                    return 0;
+                output.push_back(pt);
             }
         }
     }
@@ -149,15 +143,13 @@ size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, 
             pt.x = cosf(radj+roffset) * cosf(radi+roffset) * (radius+roffset);
             pt.y = sinf(radi+roffset) * (radius+roffset);
             pt.z = sinf(radj+roffset) * cosf(radi+roffset) * (radius+roffset);
-            if ( !output.push_back(pt) )
-                return 0;
+            output.push_back(pt);
 
             // flip y to mirror the half sphere
             // flip x to reduce artifacts
             pt.x = -pt.x;
             pt.y = -pt.y;
-            if ( !output.push_back(pt) )
-                return 0;
+            output.push_back(pt);
         }
     }
 
@@ -173,7 +165,6 @@ void gfxBlinkStars( coreInfo &core )
         vertex &star = *i;
         star.r = star.g = star.b = frand();
     }
-    
 }
 
 size_t gfxGenStars( array::list<vertex> &output, int num )
@@ -187,8 +178,7 @@ size_t gfxGenStars( array::list<vertex> &output, int num )
         float colour = frand();
 
         vertex star = { xpos, ypos, 0.0f, colour, colour, colour };
-        if ( !output.push_back(star) )
-            return 0;
+        output.push_back(star);
     }
 
     return output.size() - start;
