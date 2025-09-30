@@ -94,13 +94,27 @@ private:
     int iWidth;
     int iHeight;
 
+    RECT rSize;
+    TCHAR* szClass;
+    const TCHAR* pcTitle;
+    bool bVisibleState;
+    int iExitCode;
 
+    // full screen memebrs
+    bool hasFullScreen;
+    DEVMODE dmOriginalConfig;
+
+    // initialized success flag
+    bool wasInitialized;
+
+
+    // waves  stuff
     const WORD StartHeader = 20;
     const WORD WaveStartData = StartHeader + 24;
    
     struct vtSound
     {
-        enum tprep {Del=0, Use=1, FreeInUse=2, Mask=3};
+        enum tprep : int {Del=0, Use=1, FreeInUse=2, Mask=3};
         tprep prepared = Use;        // bit 0 = 0 can erase,  = 1 sound usable
                                      // bit 1 = 0 sound free, = 1 sound in use
         void operator|=(tprep a) {prepared = static_cast<tprep>(static_cast<int>(prepared) |  static_cast<int>(a));}
@@ -127,24 +141,10 @@ private:
         mtSnd vSound;
     };
 
-    // waves
     static void CALLBACK WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
     mpbtSnd OpenWave(stSound *Snd);
     void CloseWave(vtSound& vsnd);
 
 
     stSound pWaves[IDW_ENDWAV - IDW_OFFSET];
-
-    RECT rSize;
-    TCHAR *szClass;
-    const TCHAR *pcTitle;
-    bool bVisibleState;
-    int iExitCode;
-
-    // full screen memebrs
-    bool hasFullScreen;
-    DEVMODE dmOriginalConfig;
-
-    // initialized success flag
-    bool wasInitialized;
 };
