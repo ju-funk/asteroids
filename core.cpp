@@ -4,8 +4,8 @@
 
 inline void coreRenderView( coreInfo &core )
 {
-    // loop active sprite list
     std::lock_guard<std::mutex> lock(core.mtx);
+    // loop active sprite list
     array::list<entity*>::iterator i = core.sprites.begin();
     for ( ; i != core.sprites.end(); ++i )
     {
