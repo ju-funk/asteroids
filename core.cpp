@@ -6,26 +6,25 @@ inline void coreRenderView( coreInfo &core )
 {
     std::lock_guard<std::mutex> lock(core.mtx);
     // loop active sprite list
-    array::list<entity*>::iterator i = core.sprites.begin();
+    array::list<entity>::iterator i = core.sprites.begin();
     for ( ; i != core.sprites.end(); ++i )
     {
-        entity *sprite = *i;
+        entity *sprite = &*i;
       
         // test for collisions between this entity and all others
         if ( (sprite->TypeEnty & entity::None) != entity::None)
         {
-            // do not wrap coords for sprites that can't collide
-
             // for every entity apart from ones already tested...
-            array::list<entity*>::iterator k = i;
+            array::list<entity>::iterator k = i;
             for ( ++k; k != core.sprites.end(); ++k )
             {
-                entity *other = *k;
+                entity *other = &*k;
                 if ( other->TypeEnty & entity::None)
                     continue;
                 astCheckCollision( core, sprite, other );
             }
 
+            // do not wrap coords for sprites that can't collide
             astWrapSprite( core, *sprite );
         }
 
@@ -110,7 +109,6 @@ int coreMainThread( )
     core.fScaleX = core.fScaleY = 10.0f;
     core.fSWidth = core.iCWidth / core.fScaleX;
     core.fSHeight = core.iCHeight / core.fScaleY;
-    core.points = 0;
     core.hDC    =  output.Get_DC();
 
     core.Score =
@@ -133,8 +131,7 @@ int coreMainThread( )
         while ( !bHasTermSignal )
         {
             // set game vars and redraw frame, break on failure
-            if ( !astUpdateState(core) )
-                break;
+            astUpdateState(core);
             coreRenderView( core );
 
             // blit frame and clear backbuffer
@@ -150,9 +147,6 @@ int coreMainThread( )
         astDeallocSprites( core );
     }
 
-    // cleanup
-    delete core.points;
-
     // signal thread has finished
     output.signalQuit();
 
@@ -163,8 +157,6 @@ int coreLoaderThread( coreInfo &core )
 {
     // lists hold vertices, pointer to model struct
     array::list<vertex> plist;
-    if ( !plist )
-        return coreBadAlloc();
     coreInfo::modPtrs &models = core.models;
     float scale;
 
@@ -173,48 +165,40 @@ int coreLoaderThread( coreInfo &core )
 
     // make ship model
     scale = 1.0f;
-    if(models.ship.Sets(gfxGenShip(plist, scale, 0.08f, false), scale))
-        return coreBadAlloc();
+    models.ship.Sets(gfxGenShip(plist, scale, 0.08f, false), scale);
 
-    if(models.shild.Sets(gfxGenShip(plist, scale, 0.08f, true), scale))
-        return coreBadAlloc();
+    models.shild.Sets(gfxGenShip(plist, scale, 0.08f, true), scale);
 
     // make misile model, store end points
     scale = 0.5f;
     vertex colour = { 1.0f, 0.0f, 0.5f, 0.5f, 0.5f, 0.5f };
-    if(models.misile.Sets(gfxGenAsteroid(plist, scale, 5.0f, colour), scale))
-        return coreBadAlloc();
+    models.misile.Sets(gfxGenAsteroid(plist, scale, 5.0f, colour), scale);
 
     // make tiny asteroid model
     scale = 1.0f;
     colour.r = 0.2f;  colour.g = 0.3f;  colour.b = 0.2f;
-    if(models.stroidTiny.Sets(gfxGenAsteroid(plist, scale, 10.0f, colour), scale))
-        return coreBadAlloc();
+    models.stroidTiny.Sets(gfxGenAsteroid(plist, scale, 10.0f, colour), scale);
 
     // make medium asteroid model
     scale = 2.0f;
     colour.r = 0.2f;  colour.g = 0.3f;  colour.b = 0.4f;
-    if(models.stroidMed.Sets(gfxGenAsteroid(plist, scale, 15.0f, colour), scale))
-        return coreBadAlloc();
+    models.stroidMed.Sets(gfxGenAsteroid(plist, scale, 15.0f, colour), scale);
 
     // make large asteroid model
     scale = 3.0f;
     colour.r = 0.5f;  colour.g = 0.3f;  colour.b = 0.3f;
-    if(models.stroidBig.Sets(gfxGenAsteroid(plist, scale, 20.0f, colour), scale))
-        return coreBadAlloc();
+    models.stroidBig.Sets(gfxGenAsteroid(plist, scale, 20.0f, colour), scale);
 
     // generate starfield
     scale = 1.0f;
-    if (models.stars.Sets(gfxGenStars(plist, static_cast<int>(1.65e-4 * core.iWidth * core.iHeight)), scale))
-        return coreBadAlloc();
+    models.stars.Sets(gfxGenStars(plist, static_cast<int>(1.65e-4 * core.iWidth * core.iHeight)), scale);
 
     // all models generated, convert to linear array
-    core.points = new array::block<vertex>(plist);
-    if(!core.points)
+    if(!core.points.init(plist))
         return coreBadAlloc();
 
     // set ship pointers into linear array
-    models.ship.Copy(core.points->begin());
+    models.ship.Copy(core.points.begin());
     models.shild.Copy(models.ship.pEnd);
 
     // setup misile model pointers
@@ -229,11 +213,7 @@ int coreLoaderThread( coreInfo &core )
     models.stars.Copy(models.stroidBig.pEnd);
 
     // all done, initialize game
-    if(!astNewGame( core, true))
-    {
-        astDeallocSprites( core );
-        return coreBadAlloc();
-    }
+    astNewGame( core, true);
 
     return true;
 }

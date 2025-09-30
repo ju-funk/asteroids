@@ -53,11 +53,10 @@ struct model
         pEnd   = Start + npoints;
     }
 
-    bool Sets(array::block<vertex>::size_type size, float Scale)
+    void Sets(array::block<vertex>::size_type size, float Scale)
     {
         scale   = Scale;
         npoints = size;
-        return size == 0;
     }
 };
 
