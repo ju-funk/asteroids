@@ -27,6 +27,7 @@ public:
     bool checkShip();
     void TestLive();
     void swapSpeed( entity *with );
+    bool setExplore();
 
     // member vars
     vertex pos;
@@ -35,8 +36,11 @@ public:
 
     int health;
     DWORD liveTime, currFire;
-    enum TypesEnty{None=1, Ship=2, Fire=4, Astro=8, Shild=16};
-    DWORD TypeEnty;
+    enum TypesEnty : DWORD {None=1, Ship=2, Fire=4, Astro=8, Shild=16};
+    TypesEnty TypeEnty;
+
+    TypesEnty operator |(entity &a) {return static_cast<TypesEnty>(static_cast<DWORD>(TypeEnty) | static_cast<DWORD>(a.TypeEnty));}
+    void operator |=(TypesEnty a) { TypeEnty = static_cast<TypesEnty>(static_cast<DWORD>(TypeEnty) | static_cast<DWORD>(a));}
 
     // model pointer and scale
     float scale;

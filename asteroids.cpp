@@ -110,7 +110,7 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
     float dist = sqrtf( xdif*xdif + ydif*ydif );
     if ( dist < maxdist )
     {
-        DWORD state = enta->TypeEnty | entb->TypeEnty;
+        entity::TypesEnty state = *enta | *entb;
 
         switch (state)                           //None=1, Ship=2, Fire=4, Astro=8, Shild=16
         {
@@ -131,23 +131,14 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
         case entity::Ship | entity::Fire:
         case entity::Fire | entity::Fire:
             // if the first entity is dead, start exploding
-            if ( !--enta->health )
-            {
-                enta->TypeEnty |= entity::None;
-                enta->scale += 0.1f;
-                enta->pos.z = -10.0f;
+            if ( enta->setExplore())
                 output.Sound(IDW_ASTEXP);
-            }
-            else if(state == (entity::Fire | entity::Astro))
+            else if(state & (entity::Fire | entity::Astro))
                 output.Sound(IDW_ASTHIT);
 
             // same with the second entity
-            if ( !--entb->health )
-            {
-                entb->TypeEnty |= entity::None;
-                entb->scale += 0.1f;
-                entb->pos.z = -10.0f;
-            }
+            entb->setExplore();
+            break;
 
             break;
 
@@ -321,12 +312,7 @@ void astUpdateState( coreInfo &core )
                     core.Fires += 3 + core.iGameLevel;
                 }
                 else if(sprite->currFire == 0 && core.Fires == 0)
-                {
-                    ship->health = 0;
-                    ship->TypeEnty |= entity::None;
-                    ship->scale += 0.1f;
-                    ship->pos.z = -10.0f;
-                }
+                    ship->setExplore();
 
                 // entity exploded, remove from list
                 i = core.sprites.erase(i);
@@ -503,9 +489,24 @@ entity::entity( model &source, float xpos, float ypos )
 }
 
 
+bool entity::setExplore()
+{
+    if (!--health)
+    {
+        *this |= entity::None;
+        scale += 0.1f;
+        pos.z = -10.0f;
+
+        return true;
+    }
+
+    return false;
+}
+
+
 bool entity::checkShip()
 {
-    if (!health)
+    if (health <= 0)
     {
         if (scale < 1.12f)
             output.Sound(IDW_SHIPEX);
@@ -514,6 +515,8 @@ bool entity::checkShip()
             return true;
         else
             scale += 0.02f;
+
+        return false;
     }
 
     // move ship
@@ -530,12 +533,7 @@ void entity::TestLive()
     {
         --liveTime;
         if (liveTime == 0)
-        {
-            health = 0;
-            TypeEnty |= entity::None;
-            scale += 1.1f;
-            pos.z = -10.0f;
-        }
+            setExplore();
     }
 }
 
