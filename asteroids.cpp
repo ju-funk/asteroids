@@ -201,8 +201,8 @@ void astShipShild(coreInfo& core, bool shild)
         {
             ship->points = core.models.shild;
             ship->TypeEnty = entity::Shild;
-            tiStayShild.Start(std::bind(astShipShild, std::ref(core), false), 3);
-            tiNextShild.Start(10, true);
+            tiStayShild.Start(std::bind(astShipShild, std::ref(core), false), core.ShlTime);
+            tiNextShild.Start(core.ShlTiDel, true);
         }
     }
     else
@@ -214,7 +214,7 @@ void astShipShild(coreInfo& core, bool shild)
 }
 
 
-int getShildInf()
+int getShildInf(int ti)
 {
     int i = tiStayShild.GetCurrTime();
     if(i > 0)
@@ -223,8 +223,8 @@ int getShildInf()
     i = tiNextShild.GetCurrTime();
 
     if(i == 0)
-        return 1;
-    
+        return ti;
+
     return -i;
 }
 
