@@ -140,9 +140,11 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             entb->setExplore();
             break;
 
+        case entity::Shild | entity::Fire:
+            entb->setExplore();
+            output.Sound(IDW_ASTSHL);
             break;
-
-        }
+      }
     }
 }
 
