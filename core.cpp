@@ -90,8 +90,8 @@ inline void coreRenderView( coreInfo &core )
 
     const int maxs = 100;
     TCHAR text[maxs];
-    int si = getShildInf();
-    _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝ :%i"), core.Score, core.Ships, core.Fires, core.iGameLevel-1, si);
+    int si = getShildInf(core.ShlTime);
+    _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝ :%i s"), core.Score, core.Ships, core.Fires, core.iGameLevel-1, si);
     TextOut(core.hDC, core.iCWidth, 2, text, static_cast<int>(_tcslen(text)));
 }
 
@@ -114,6 +114,8 @@ int coreMainThread( )
     core.Score =
     core.Fires = 0;
     core.Ships = 0;
+    core.ShlTime = 3; 
+    core.ShlTiDel = 10;
 
 
     // check if load succeeded
