@@ -385,7 +385,7 @@ void astNewGame( coreInfo &core, bool newgame )
         gfxDrawLoader(core, 2);
 
         entity *ship = &*core.sprites.begin();
-        if (ship->scale > 1.0 && ship->health == 1)
+        if (ship->scale > 1.0)
         {
             --core.Ships;
             if (core.Ships == 0)
