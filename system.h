@@ -138,13 +138,13 @@ private:
         WAVEFORMATEX wfx = {};
 
         size_t key = 0;
+        size_t max_key = 0;
         mtSnd vSound;
     };
 
     static void CALLBACK WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
     mpbtSnd OpenWave(stSound *Snd);
     void CloseWave(vtSound& vsnd);
-
 
     stSound pWaves[IDW_ENDWAV - IDW_OFFSET];
 };
