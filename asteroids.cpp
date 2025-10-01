@@ -175,12 +175,11 @@ void astFireBullet( coreInfo &core )
     bullet.TypeEnty = entity::Fire;
     bullet.liveTime = static_cast<DWORD>(40 / bullet.speed) + 1;
     bullet.currFire = --core.Fires;
-    if (core.Fires == 2)
+    if (core.Fires == 3)
         output.Sound(IDW_FIRWAR);
 
     // add bullet to active sprite list
     core.sprites.push_back(bullet);
-
 
     output.Sound(IDW_FIRESH);
 }
@@ -486,8 +485,8 @@ entity::entity( model &source, float xpos, float ypos )
     TypeEnty = None;
 
     // temp health point
-    health   = 1;
-    liveTime = currFire = 0;
+    health   = currFire = 1;
+    liveTime = 0;
 }
 
 
