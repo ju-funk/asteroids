@@ -294,16 +294,20 @@ void sys::screen::Sound(WORD id)
     stSound *Snd = &pWaves[id - IDW_OFFSET];
 
     mpbtSnd it(std::find_if(Snd->vSound.begin(), Snd->vSound.end(), [](auto& snd) {return (snd.second.prepared & vtSound::Mask) == vtSound::Use; }), true);
-    if (it.first == Snd->vSound.end())
-        it = OpenWave(Snd); 
+    it.second = it.first != Snd->vSound.end();
 
-   // DebugOut(_T("Sound              stSP : %p, vtSP : %p, Key : %03i, Id  : %03i\n"), Snd, it.first->second, it.first->second.Idx, id - IDW_OFFSET);
+    if (it.second && (Snd->key < Snd->max_key))
+        it = OpenWave(Snd); 
 
     if (it.second)
     {
+       // DebugOut(_T("Sound              stSP : %p, vtSP : %p, Key : %03i, Id  : %03i\n"), Snd, it.first->second, it.first->second.Idx, id - IDW_OFFSET);
         it.first->second |= vtSound::FreeInUse;
         waveOutWrite(it.first->second.hWaveOut, &it.first->second.waveHdr, sizeof(WAVEHDR));
     }
+    //else
+       // DebugOut(_T("NO Sound\n"));
+
 
     // close too many sound handles
     for (mtSndIt its = Snd->vSound.begin(); its != Snd->vSound.end(); )
@@ -376,6 +380,25 @@ bool sys::screen::LoadWaves()
     for (WORD i = IDW_START; i < IDW_ENDWAV; ++i)
     {
         stSound *Snd = &pWaves[i - IDW_OFFSET];
+        switch (i)
+        {
+        case IDW_START :
+        case IDW_LEVEL :
+        case IDW_SHIPEX:
+        case IDW_FIRWAR:
+            Snd->max_key = 1;
+            break;
+        case IDW_FIRESH:
+        case IDW_ASTSHL:
+            Snd->max_key = 2;
+            break;
+        case IDW_COLAST:
+        case IDW_ASTHIT:
+        case IDW_ASTEXP:
+            Snd->max_key = 5;
+            break;
+        }
+
         if (!LoadWave(i, Snd))
         {
             userNotice(_T("Unable to Load sound."), true);
