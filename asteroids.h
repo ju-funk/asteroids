@@ -85,19 +85,17 @@ class TimerClass
 public:
     struct tTimerVar
     {
-        int Idx = 0;
         int currTime = 0;
         int orgTime  = 0;
 
         void operator =(int val) {orgTime = val;}
-        int GetTime() { return currTime; }
+        int GetTime() const { return currTime; }
     };
 
 private:
     std::atomic<bool> running{ true };   // Thread live
-    enum tAccState {none, loopstart, inloop, change};
-    std::atomic<tAccState> chgvec{ none };   // signal for change vector
-    std::mutex mtx;
+    std::atomic<bool> active{ false };   // Timer active
+    std::mutex mtx_loop, mtx;
     std::condition_variable cv;
     std::thread timerThread;
 
@@ -115,85 +113,64 @@ private:
     using vtTiDat  = std::vector<tTimeData>;
     using itTiDat = vtTiDat::iterator;
     vtTiDat vTiDat;
-    int  Index = 0;
 
-    void threadFunc()
+    void DecVec()
     {
         std::unique_lock<std::mutex> lock(mtx);
 
+        std::for_each(vTiDat.begin(), vTiDat.end(), [&lock](tTimeData& dat) {
+            --dat.currTi->currTime;
+
+            if (dat.currTi->currTime == 0)
+            {
+                if (dat.callback != nullptr)
+                {
+                    lock.unlock();
+                    dat.callback();
+                    lock.lock();
+                }
+
+                if (!dat.breakFlag)
+                    dat.currTi->currTime = dat.currTi->orgTime;
+            }
+        });
+
+        itTiDat it = std::remove_if(vTiDat.begin(), vTiDat.end(), [](const tTimeData& dat) {return dat.currTi->currTime == 0; });
+        vTiDat.erase(it, vTiDat.end());
+        active = vTiDat.size() > 0;
+    }
+
+
+    void threadFunc()
+    {
+        std::unique_lock<std::mutex> lock(mtx_loop);
+
         while (running)
         {
-            // wait of timer new start
-            TRACE0(_T("threadFunc : cv.wait running\n"));
-            cv.wait(lock, [this] { return chgvec == loopstart || !running.load(); });
-            TRACE0(_T("threadFunc : cv.wait after\n"));
+            cv.wait(lock, [this] { return active.load() || !running; });
 
-            if (!running)
+            if(!running)
                 break;
-            
-            TRACE0(_T("threadFunc : set inloop\n"));
 
-            chgvec = inloop;
-            cv.notify_one();
-
-            TRACE0(_T("threadFunc : go in vector loop\n"));
-            while (!vTiDat.empty() && chgvec == inloop)
+            while (active)
             {
                 auto wakeUp = std::chrono::steady_clock::now() + std::chrono::seconds(1);
-                cv.wait_until(lock, wakeUp, [this] { return chgvec != inloop || !running; });
-                TRACE1(_T("threadFunc : out wait_until te = %i\n"), (int)chgvec);
-
-                if(chgvec != inloop || vTiDat.empty())
-                    break;
-                
-                TRACE0(_T("threadFunc : timer stuff\n"));
-
-                std::for_each(vTiDat.begin(), vTiDat.end(), [](tTimeData& dat) {
-                    --dat.currTi->currTime;
-
-                    if (dat.currTi->currTime == 0)
-                    {
-                        if (dat.callback != nullptr)
-                            dat.callback();
-
-                        if (!dat.breakFlag)
-                            dat.currTi->currTime = dat.currTi->orgTime;
-                    }
-                });
-
-                if (chgvec != inloop)
-                    break;
-
-                itTiDat it = std::remove_if(vTiDat.begin(), vTiDat.end(), [](const tTimeData& dat) {return dat.currTi->currTime == 0; });
-                vTiDat.erase(it, vTiDat.end());
+                cv.wait_until(lock, wakeUp, [this] { return !running; });
+ 
+                if (running)
+                    DecVec();
+                else
+                    active = false;
             }
-
-            if (chgvec == change)
-            {
-                TRACE0(_T("threadFunc : change send noty\n"));
-                chgvec = none;
-                cv.notify_one();
-                TRACE0(_T("threadFunc : change was send noty\n"));
-            }
-            else
-                chgvec = vTiDat.empty() ? none : inloop;
         }
     }
 
 
     bool HandleAccess(tTimeData *td, bool end = false)
     {
-        std::unique_lock<std::mutex> lock(mtx);
-        bool ret = true;
+        std::lock_guard<std::mutex> lock(mtx);
 
-        if (chgvec == inloop)
-        {
-            TRACE0(_T("HandleAccess : is inloop, set change\n"));
-            chgvec = change;
-            cv.notify_one();
-            cv.wait(lock, [this] { return chgvec == none; });
-            TRACE0(_T("HandleAccess : is inloop, get none\n"));
-        }
+        bool ret = true;
 
         if (td == nullptr)
         {
@@ -201,14 +178,15 @@ private:
                 std::for_each(vTiDat.begin(), vTiDat.end(), [&lock](tTimeData& dat) { dat.currTi->currTime = 0; });
             vTiDat.clear();
             running = !end;
+            active = false;
             cv.notify_one();
         }
         else
         {
+            itTiDat it = std::find_if(vTiDat.begin(), vTiDat.end(), [td](const tTimeData& dat) {return dat.currTi == td->currTi; });
+            
             if (td->currTi->orgTime == 0)
             {
-                itTiDat it = std::find_if(vTiDat.begin(), vTiDat.end(), [td](const tTimeData& dat) {return dat.currTi->Idx == td->currTi->Idx; });
-             
                 if(it != vTiDat.end())
                     vTiDat.erase(it);
                 else
@@ -216,20 +194,21 @@ private:
             }
             else
             {
-                itTiDat it = std::find_if(vTiDat.begin(), vTiDat.end(), [td](const tTimeData& dat) {return dat.currTi == td->currTi; });
                 // not insert the same var twice
-                if(it == vTiDat.end())
+                if (it == vTiDat.end())
+                {
+                    td->currTi->currTime = td->currTi->orgTime;
+
                     vTiDat.push_back(*td);
+                    if (!active)
+                    {
+                        active = true;
+                        cv.notify_one();
+                    }
+                }
                 else
                     ret = false;
             }
-
-            //output.DebugOut(_T("HandleAccess : set loopstart\n"));
-            chgvec = loopstart;
-            cv.notify_one();
-            //output.DebugOut(_T("HandleAccess : set loopstart send noty\n"));
-            cv.wait(lock, [this] { return chgvec == inloop; });
-            //output.DebugOut(_T("HandleAccess : get inloop\n"));
         }
 
         return ret;
@@ -251,16 +230,12 @@ public:
 
     bool NewTimer(tTimerVar &second, bool breakFlag)
     {
-        second.currTime = second.orgTime;
-        second.Idx      = ++Index;
         tTimeData td(&second, breakFlag);
         return HandleAccess(&td);
     }
 
     bool NewTimer(tTimerVar &second, std::function<void()> func, bool breakFlag = true)
     {
-        second.currTime = second.orgTime;
-        second.Idx      = ++Index;
         tTimeData td(&second, breakFlag, func);
         return HandleAccess(&td);
     }
