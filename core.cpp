@@ -90,7 +90,7 @@ inline void coreRenderView( coreInfo &core )
 
     const int maxs = 100;
     TCHAR text[maxs];
-    int si = getShildInf(core.ShlTime);
+    int si = getShildInf(core);
     _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝ :%i s"), core.Score, core.Ships, core.Fires, core.iGameLevel-1, si);
     TextOut(core.hDC, core.iCWidth, 2, text, static_cast<int>(_tcslen(text)));
 }

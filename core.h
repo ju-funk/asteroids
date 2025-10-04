@@ -35,7 +35,8 @@ struct coreInfo
     // other game specific vars
     int iGameLevel;
     DWORD Score, Fires; 
-    int   ShlTime, ShlTiDel, Ships;
+    TimerClass::tTimerVar  ShlTime, ShlTiDel; 
+    int Ships;
 };
 
 // prototypes called by core.cpp
@@ -44,7 +45,7 @@ void gfxBlinkStars( coreInfo &core );
 void astWrapSprite( coreInfo &core, entity &sprite );
 void astFireBullet( coreInfo &core );
 void astShipShild( coreInfo &core, bool shild);
-int getShildInf(int ti);
+int getShildInf(coreInfo &core);
 void astNewGame( coreInfo &core, bool newgame );
 void astUpdateState( coreInfo &core );
 void astDeallocSprites( coreInfo &core );
