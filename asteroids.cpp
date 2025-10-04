@@ -5,8 +5,7 @@
 
 
 KeyMan keys;
-TimerClass tiStayShild;
-TimerClass tiNextShild;
+TimerClass secTimer;
 
 
 inline void astHandleInput( coreInfo &core )
@@ -189,12 +188,12 @@ void astShipShild(coreInfo& core, bool shild)
     entity* ship = &*core.sprites.begin();
     if (shild)
     {
-        if (tiNextShild.IsTime())
+        if (core.ShlTiDel.GetTime() == 0)
         {
             ship->points = core.models.shild;
             ship->TypeEnty = entity::Shild;
-            tiStayShild.Start(std::bind(astShipShild, std::ref(core), false), core.ShlTime);
-            tiNextShild.Start(core.ShlTiDel, true);
+            secTimer.NewTimer(core.ShlTiDel, true);
+            secTimer.NewTimer(core.ShlTime, std::bind(astShipShild, std::ref(core), false));
         }
     }
     else
@@ -206,16 +205,16 @@ void astShipShild(coreInfo& core, bool shild)
 }
 
 
-int getShildInf(int ti)
+int getShildInf(coreInfo& core)
 {
-    int i = tiStayShild.GetCurrTime();
+    int i = core.ShlTime.GetTime();
     if(i > 0)
         return i;
 
-    i = tiNextShild.GetCurrTime();
+    i = core.ShlTiDel.GetTime();
 
     if(i == 0)
-        return ti;
+        return core.ShlTime.orgTime;
 
     return -i;
 }
@@ -365,8 +364,7 @@ void astNewGame( coreInfo &core, bool newgame )
     bool restart = (core.Ships <= 1 && newgame);
     bool levelup = (core.Ships > 0 && !newgame);
 
-    tiStayShild.Stop();
-    tiNextShild.Stop();
+    secTimer.StopTimer();
 
     if (restart)
     {

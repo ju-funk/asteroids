@@ -10,6 +10,10 @@
 #include <condition_variable>
 
 
+#define  TRACE0(sz)     //output.DebugOut(sz)
+#define  TRACE1(sz, p1) //output.DebugOut(sz, p1)
+
+
 class entity
 {
 public:
@@ -78,17 +82,40 @@ private:
 
 class TimerClass
 {
+public:
+    struct tTimerVar
+    {
+        int Idx = 0;
+        int currTime = 0;
+        int orgTime  = 0;
+
+        void operator =(int val) {orgTime = val;}
+        int GetTime() { return currTime; }
+    };
+
 private:
     std::atomic<bool> running{ true };   // Thread live
-    std::atomic<bool> active{ false };   // Timer
-    std::atomic<bool> timeElapsed{ false };
-    std::function<void()> callback{ nullptr };
+    enum tAccState {none, loopstart, inloop, change};
+    std::atomic<tAccState> chgvec{ none };   // signal for change vector
     std::mutex mtx;
     std::condition_variable cv;
+    std::thread timerThread;
 
-    int intervalSeconds{ 0 };
-    int currTime{ 0 };
-    bool breakOnElapsed{ true };
+
+    struct tTimeData
+    {
+        std::function<void()> callback;
+        tTimerVar *currTi;
+        bool breakFlag;
+
+        tTimeData(tTimerVar *curr, bool breakf = true, std::function<void()> call = nullptr) :
+            currTi{curr}, breakFlag{breakf}, callback{call} {}
+    };
+
+    using vtTiDat  = std::vector<tTimeData>;
+    using itTiDat = vtTiDat::iterator;
+    vtTiDat vTiDat;
+    int  Index = 0;
 
     void threadFunc()
     {
@@ -96,41 +123,116 @@ private:
 
         while (running)
         {
-            // wait of timer new start 
-            cv.wait(lock, [this] { return active || !running.load(); });
+            // wait of timer new start
+            TRACE0(_T("threadFunc : cv.wait running\n"));
+            cv.wait(lock, [this] { return chgvec == loopstart || !running.load(); });
+            TRACE0(_T("threadFunc : cv.wait after\n"));
 
             if (!running)
                 break;
+            
+            TRACE0(_T("threadFunc : set inloop\n"));
 
-            timeElapsed = false;
+            chgvec = inloop;
+            cv.notify_one();
 
-            for (currTime = intervalSeconds; currTime > 0; --currTime)
+            TRACE0(_T("threadFunc : go in vector loop\n"));
+            while (!vTiDat.empty() && chgvec == inloop)
             {
                 auto wakeUp = std::chrono::steady_clock::now() + std::chrono::seconds(1);
-                cv.wait_until(lock, wakeUp);
+                cv.wait_until(lock, wakeUp, [this] { return chgvec != inloop || !running; });
+                TRACE1(_T("threadFunc : out wait_until te = %i\n"), (int)chgvec);
 
-                if (!active)
-                    break; // Stop/Reset
+                if(chgvec != inloop || vTiDat.empty())
+                    break;
+                
+                TRACE0(_T("threadFunc : timer stuff\n"));
+
+                std::for_each(vTiDat.begin(), vTiDat.end(), [](tTimeData& dat) {
+                    --dat.currTi->currTime;
+
+                    if (dat.currTi->currTime == 0)
+                    {
+                        if (dat.callback != nullptr)
+                            dat.callback();
+
+                        if (!dat.breakFlag)
+                            dat.currTi->currTime = dat.currTi->orgTime;
+                    }
+                });
+
+                if (chgvec != inloop)
+                    break;
+
+                itTiDat it = std::remove_if(vTiDat.begin(), vTiDat.end(), [](const tTimeData& dat) {return dat.currTi->currTime == 0; });
+                vTiDat.erase(it, vTiDat.end());
             }
 
-            if (!active)
-                continue;
-
-            // time running out
-            timeElapsed = true;
-            if (callback)
+            if (chgvec == change)
             {
-                lock.unlock();
-                callback();
-                lock.lock();
-                active = false;  // Callback -> Timer stop
+                TRACE0(_T("threadFunc : change send noty\n"));
+                chgvec = none;
+                cv.notify_one();
+                TRACE0(_T("threadFunc : change was send noty\n"));
+            }
+            else
+                chgvec = vTiDat.empty() ? none : inloop;
+        }
+    }
+
+
+    bool HandleAccess(tTimeData *td, bool end = false)
+    {
+        std::unique_lock<std::mutex> lock(mtx);
+        bool ret = true;
+
+        if (chgvec == inloop)
+        {
+            TRACE0(_T("HandleAccess : is inloop, set change\n"));
+            chgvec = change;
+            cv.notify_one();
+            cv.wait(lock, [this] { return chgvec == none; });
+            TRACE0(_T("HandleAccess : is inloop, get none\n"));
+        }
+
+        if (td == nullptr)
+        {
+            if(!end)
+                std::for_each(vTiDat.begin(), vTiDat.end(), [&lock](tTimeData& dat) { dat.currTi->currTime = 0; });
+            vTiDat.clear();
+            running = !end;
+            cv.notify_one();
+        }
+        else
+        {
+            if (td->currTi->orgTime == 0)
+            {
+                itTiDat it = std::find_if(vTiDat.begin(), vTiDat.end(), [td](const tTimeData& dat) {return dat.currTi->Idx == td->currTi->Idx; });
+             
+                if(it != vTiDat.end())
+                    vTiDat.erase(it);
+                else
+                    ret = false;
+            }
+            else
+            {
+                itTiDat it = std::find_if(vTiDat.begin(), vTiDat.end(), [td](const tTimeData& dat) {return dat.currTi == td->currTi; });
+                // not insert the same var twice
+                if(it == vTiDat.end())
+                    vTiDat.push_back(*td);
+                else
+                    ret = false;
             }
 
-            if (breakOnElapsed)
-                active = false;  // Timer stop
-
-            cv.wait(lock, [this]() { return !timeElapsed.load() || !active.load() || !running.load(); });
+            //output.DebugOut(_T("HandleAccess : set loopstart\n"));
+            chgvec = loopstart;
+            cv.notify_one();
+            //output.DebugOut(_T("HandleAccess : set loopstart send noty\n"));
+            cv.wait(lock, [this] { return chgvec == inloop; });
+            //output.DebugOut(_T("HandleAccess : get inloop\n"));
         }
+
+        return ret;
     }
 
 public:
@@ -141,69 +243,43 @@ public:
 
     ~TimerClass()
     {
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            running = false;
-            cv.notify_all();
-        }
+        EndTimer();
 
         if (timerThread.joinable())
             timerThread.join();
     }
 
-    void Start(int second, bool breakFlag)
+    bool NewTimer(tTimerVar &second, bool breakFlag)
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        currTime = intervalSeconds = second;
-        breakOnElapsed = breakFlag;
-        callback = nullptr;
-        timeElapsed = false;
-        active = true;
-        cv.notify_one();
+        second.currTime = second.orgTime;
+        second.Idx      = ++Index;
+        tTimeData td(&second, breakFlag);
+        return HandleAccess(&td);
     }
 
-    void Start(std::function<void()> func, int second)
+    bool NewTimer(tTimerVar &second, std::function<void()> func, bool breakFlag = true)
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        currTime = intervalSeconds = second;
-        callback = func;
-        breakOnElapsed = true;
-        timeElapsed = false;
-        active = true;
-        cv.notify_one();
+        second.currTime = second.orgTime;
+        second.Idx      = ++Index;
+        tTimeData td(&second, breakFlag, func);
+        return HandleAccess(&td);
     }
 
-    bool IsTime()
+    bool StopTimer(tTimerVar &second)
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        if (timeElapsed)
-        {
-            timeElapsed = false;
-            cv.notify_one(); // Timer wakeup
-            return true;
-        }
-        return !active.load();
+        second = 0;
+        tTimeData td(&second);
+        return HandleAccess(&td);
     }
 
-    int GetCurrTime()
+    void StopTimer()
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        if (active)
-            return currTime;
-        return 0;
+        HandleAccess(nullptr);
     }
 
-
-    void Stop()
+    void EndTimer()
     {
-        std::lock_guard<std::mutex> lock(mtx);
-        active = false;
-        timeElapsed = false;
-        currTime = 0;
-        cv.notify_one();
+        HandleAccess(nullptr, true);
     }
-
-private:
-    std::thread timerThread;
 };
 
