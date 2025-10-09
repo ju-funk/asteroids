@@ -64,13 +64,6 @@ inline void astHandleInput( coreInfo &core )
         spaceship->pos.g = spaceship->pos.r = 0.0f;
 }
 
-// ------------------------------------------------------------------
-// transverse active sprites list, deallocate all entities
-// ------------------------------------------------------------------
-void astDeallocSprites( coreInfo &core )
-{
-    core.sprites.clear();
-}
 
 // ------------------------------------------------------------------
 // check and process sprite collisions
@@ -550,44 +543,6 @@ void astNewGame( coreInfo &core, bool newgame )
     */
 }
 
-// unused since perspective turned off
-/*inline void astWrapSprite3D( coreInfo &core, entity &sprite )
-{
-    // compute screen extents for the sprites depth in the scene
-    // 640 (screen width) * depth = visible limit at that depth
-    float depth = core.fZOrigin + sprite.pos.z;
-    float xlimit = (core.iCWidth*depth) / core.fScaleX;
-    float ylimit = (core.iCHeight*depth) / core.fScaleY;
-
-    // wrap left/right at any depth - cartesian offset means
-    // left extremity is -320.0f, and not 0.0f
-    if ( sprite.pos.x < -xlimit )
-        sprite.pos.x += xlimit*2;
-    else if ( sprite.pos.x >= xlimit )
-        sprite.pos.x -= xlimit*2;
-
-    // wrap top/bottom
-    if ( sprite.pos.y < -ylimit )
-        sprite.pos.y += ylimit*2;
-    else if ( sprite.pos.y >= ylimit )
-        sprite.pos.y -= ylimit*2;
-}*/
-
-void astWrapSprite( coreInfo &core, entity &sprite )
-{
-    // wrap left/right at any depth - cartesian offset means
-    // left extremity is -320.0f, and not 0.0f
-    if ( sprite.pos.x < -core.fSWidth )
-        sprite.pos.x += core.fSWidth*2;
-    else if ( sprite.pos.x >= core.fSWidth )
-        sprite.pos.x -= core.fSWidth*2;
-
-    // wrap top/bottom
-    if ( sprite.pos.y < -core.fSHeight )
-        sprite.pos.y += core.fSHeight*2;
-    else if ( sprite.pos.y >= core.fSHeight )
-        sprite.pos.y -= core.fSHeight*2;
-}
 
 // ------------------------------------------------------------------
 // entity object. constructor. initializes velocity/direction vectors

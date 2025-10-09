@@ -22,7 +22,6 @@ inline unsigned long int gfxRGB( float r, float g, float b )
 
 void gfxDrawLoader( coreInfo &info, int Loop)
 {
-
     auto _gfxDrawLoader = [&](float& ticker) -> void
     {
         ticker += 0.4f;

@@ -46,13 +46,8 @@ struct coreInfo
 void gfxDrawLoader( coreInfo &info, int loop );
 void gfxBlinkStars( coreInfo &core );
 void astWrapSprite( coreInfo &core, entity &sprite );
-void astFireBullet( coreInfo &core );
-void astShipShild( coreInfo &core, bool shild);
-int getShildInf(coreInfo &core);
-void astNewGame( coreInfo &core, bool newgame );
-void astUpdateState( coreInfo &core );
+
 void astDeallocSprites( coreInfo &core );
-void astCheckCollision( coreInfo &core, entity *enta, entity *entb );
 
 // thread entry proceedures in core.cpp
 int  coreMainThread( );
