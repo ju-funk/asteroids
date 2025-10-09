@@ -42,9 +42,9 @@ inline void astHandleInput( coreInfo &core )
             astShipShild(core, true);
 
         if((wheel & 1) == 1)
-            spaceship->speed = 0.01f;
+            spaceship->speed = 0.02f;
         if((wheel & 2) == 2)
-            spaceship->speed = -0.01f;
+            spaceship->speed = -0.02f;
     }
 
     if(keys.GetKeyState(VK_SPACE, core.FireGun ? 30 : KeyMan::MustToggle))
@@ -124,6 +124,7 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
         case entity::Astro | entity::ItFire:
         case entity::Astro | entity::ItShild:
         case entity::Astro | entity::ItShip:
+        case entity::Astro | entity::ItFireGun:
 
         case entity::ItFire | entity::ItShild:
         case entity::ItFire | entity::ItShip:
@@ -314,7 +315,7 @@ void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where)
     }
 
     entity Item(newType, where.x, where.y, ty);
-    Item.health = 1;
+    Item.health = 2;
     Item.speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
     Item.liveTime = static_cast<DWORD>(200 / Item.speed) + 1;
     Item.setDir(posrad);
