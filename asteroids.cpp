@@ -627,7 +627,8 @@ void entity::swapSldDir(entity* with, float Speed)
     float v1 = pos.r + pos.g;
     float v2 = with->pos.r + with->pos.r;
 
-    if (((v1 < 0.0f) && (v2 < 0.0f)) || ((v1 > 0.0f) && (v2 > 0.0f)))
+    if(((pos.r < 0.0f) && (with->pos.r < 0.0f)) && ((pos.g < 0.0f) && (with->pos.g < 0.0f)) ||
+       ((pos.r > 0.0f) && (with->pos.r > 0.0f)) && ((pos.g > 0.0f) && (with->pos.g > 0.0f)) )
     {
         if (fabsf(v1) > fabsf(v2))
         {
@@ -641,6 +642,7 @@ void entity::swapSldDir(entity* with, float Speed)
         }
     }
 
+    speed = 0.1f;
     addDir(0.0f);
     speed = Speed;
     updatePos();
