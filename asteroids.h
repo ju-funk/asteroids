@@ -55,6 +55,20 @@ public:
 };
 
 
+void astFireBullet(coreInfo& core);
+void astShipShild(coreInfo& core, bool shild);
+int getShildInf(coreInfo& core);
+void astNewGame(coreInfo& core, bool newgame);
+void astUpdateState(coreInfo& core);
+void astCheckCollision(coreInfo& core, entity* enta, entity* entb);
+
+
+
+
+
+
+/// /////////////////////////////////////////////////////////
+/// helper classes for Key/Mouse-handling & TimerClass 1 sec
 
 class KeyMan
 {
