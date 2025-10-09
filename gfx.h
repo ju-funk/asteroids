@@ -8,6 +8,24 @@ struct vertex
     float x, y, z;
     float r, g, b;
 
+    vertex(float X=0.0f, float Y=0.0f, float Z=0.0f, float R=0.0f, float G=0.0f, float B=0.0f)
+    {
+        SetColor(R, G, B);
+        x = X;
+        y = Y;
+        z = Z;
+    }
+
+    void SetColor(float R, float G, float B)
+    {
+        x = 0.0f;
+        y = 0.0f;
+        z = 0.0f;
+        r = R;
+        g = G;
+        b = B;
+    }
+
     template<typename T>
     inline vertex operator +(array::matrix<T>& in)
     {
@@ -63,7 +81,12 @@ struct model
 // prototypes from gfx.cpp
 inline float frand( void );
 inline unsigned long int gfxRGB( float r, float g, float b );
-size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, bool shild );
+size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, vertex& Shipcol, vertex& Shildcol);
 size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour );
 struct coreInfo;
 size_t gfxGenStars( array::list<vertex> &output, coreInfo& core);
+size_t gfxGenItemFire(array::list<vertex>& output, float len, float detail, vertex& colour);
+size_t gfxGenItemShild(array::list<vertex>& output, float len, float detail, vertex& colour);
+size_t gfxGenItemShip(array::list<vertex>& output, float len, float detail, vertex& colour);
+size_t gfxGenItemFireGun(array::list<vertex>& output, float len, float detail, vertex& colour);
+

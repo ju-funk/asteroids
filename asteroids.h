@@ -17,9 +17,6 @@
 class entity
 {
 public:
-    // constructor
-    entity( model &source, float xpos, float ypos );
-
     // direction control
     void updatePos( void );
     void addPos( void );
@@ -40,7 +37,10 @@ public:
 
     int health;
     DWORD liveTime, currFire;
-    enum TypesEnty : DWORD {None=1, Ship=2, Fire=4, Astro=8, Shild=16};
+    enum TypesEnty : DWORD {Zero=0, None=1, Ship=2, Fire=4, Astro=8, Shild=16, ItFire=32, ItShild=64, ItShip = 128, ItFireGun = 256};
+    static const int MaxItems = 22;
+    static const TypesEnty Items[MaxItems+1];
+
     TypesEnty TypeEnty;
 
     TypesEnty operator |(entity &a) {return static_cast<TypesEnty>(static_cast<DWORD>(TypeEnty) | static_cast<DWORD>(a.TypeEnty));}
@@ -49,7 +49,12 @@ public:
     // model pointer and scale
     float scale;
     model points;
+
+    // constructor
+    entity( model &source, float xpos, float ypos, TypesEnty typeEnty);
 };
+
+
 
 class KeyMan
 {

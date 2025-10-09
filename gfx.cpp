@@ -64,46 +64,46 @@ void gfxDrawLoader( coreInfo &info, int Loop)
     }
 }
 
-size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, bool shild )
+size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, vertex& Shipcol, vertex& Shildcol)  // what = 0 -> none 1, -> ship, 2 = shild, 3 = ship & shild
 {
     size_t start = output.size();
 
     vertex pt;
-    pt.z = 0.0f;
     float y2 = radius / 2.5f;
     float y1 = y2 - radius;
-    for ( float i = 0.0f; i <= radius; i+=detail )
-    {
-        pt.x = i;                                               /*          / \ < this */
-        pt.y =y1 + i;                                           /*          --         */
-        pt.r = 1.0f; pt.g = 0.0f; pt.b = 0.0f;
-        output.push_back(pt);
-        pt.x = -pt.x;                                           /*   this > / \        */
-        output.push_back(pt);                                   /*          --         */
 
-        pt.x = i;                                               /*          / \        */
-        pt.y =y2;                                               /*          --  < this */
-        pt.r = 0.0f; pt.g = 1.0f; pt.b = 0.0f;
-        output.push_back(pt);
-        pt.x = -pt.x;                                           /*          / \        */
-        output.push_back(pt);                                   /*   this > --         */
+    if (Shipcol.r > 0.0f)
+    {
+        pt = Shipcol;
+        for (float i = 0.0f; i <= radius; i += detail)
+        {
+            pt.x = i;                                               /*          / \ < this */
+            pt.y = y1 + i;                                          /*          --         */
+            output.push_back(pt);
+            pt.x = -pt.x;                                           /*   this > / \        */
+            output.push_back(pt);                                   /*          --         */
+
+                                                                    /*          / \        */
+            pt.y = y2;                                              /*   this > --         */
+            output.push_back(pt);
+            pt.x = -pt.x;                                           /*          / \        */
+            output.push_back(pt);                                   /*          --  < this */
+        }
     }
 
-    if (shild)
+    if (Shildcol.r > 0.0)
     {
         radius += 0.5f;
+        pt = Shildcol;
+        pt.z = 0.0f;
+
         for (float radi = 0.0f; radi < 0.2; radi += 0.1f)
         {
             for (float radj = 0.0f; radj < M_2PI; radj += detail)
             {
-                pt.r = 1.0f;
-                pt.g = 1.0f;
-                pt.b = 0.0f;
-
                 // use the cosine of the semi-circle as the radius
                 pt.x = cosf(radj) * (radius - radi);
                 pt.y = sinf(radj) * (radius - radi);
-                pt.z = 0.0f;
                 output.push_back(pt);
 
                 // flip y to mirror the half sphere
@@ -117,6 +117,94 @@ size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, boo
 
     return output.size() - start;
 }
+
+void gfxGenItem(array::list<vertex>& output, float len, float detail, vertex& col)
+{
+    float x1 = -len / 2.0f;
+    float y1 = x1;
+
+    for (float i = 0.0f; i <= len; i += detail)
+    {
+        col.x = x1 + i;
+        col.y = y1;
+        output.push_back(col);
+        col.y = -y1;
+        output.push_back(col);
+
+        col.x = x1;
+        col.y = y1 + i;
+        output.push_back(col);
+        col.x = -x1;
+        output.push_back(col);
+    }
+}
+
+
+size_t gfxGenItemFire(array::list<vertex>& output, float len, float detail, vertex& colour)
+{
+    size_t start = output.size();
+
+    gfxGenItem(output, len, detail, colour);
+
+    len = 0.4f;
+    colour.SetColor(0.3f, 0.0f, 0.0f);
+    gfxGenAsteroid(output, len, 4.0f, colour);
+
+    return output.size() - start;
+}
+
+size_t gfxGenItemFireGun(array::list<vertex>& output, float len, float detail, vertex& colour)
+{
+    size_t start = output.size();
+
+    gfxGenItem(output, len, detail, colour);
+
+    len = 0.3f;
+    colour.SetColor(0.3f, 0.0f, 0.0f);
+    colour.x = 0.5f;
+    colour.y = 0.5f;
+    gfxGenAsteroid(output, len, 3.0f, colour);
+    colour.x = -0.5f;
+    colour.y = -0.5f;
+    gfxGenAsteroid(output, len, 3.0f, colour);
+
+    return output.size() - start;
+}
+
+
+
+size_t gfxGenItemShild(array::list<vertex>& output, float len, float detail, vertex& colour)
+{
+    size_t start = output.size();
+
+    vertex col;
+    gfxGenItem(output, len, detail, colour);
+
+    colour.SetColor(-1.0f, 0.0f, 0.0f);
+    col.SetColor(1.0f, 1.0f, 0.0f);
+
+    len = (len / 2) - 1.0f;
+    gfxGenShip(output, len, 0.08f, colour, col);
+
+    return output.size() - start;
+}
+
+size_t gfxGenItemShip(array::list<vertex>& output, float len, float detail, vertex& colour)
+{
+    size_t start = output.size();
+
+    vertex col;
+    gfxGenItem(output, len, detail, colour);
+
+    colour.SetColor(1.0f, 0.0f, 1.0f);
+    col.SetColor(-1.0f, 0.0f, 0.0f);
+
+    len = (len / 2);
+    gfxGenShip(output, len, 0.08f, colour, col);
+
+    return output.size() - start;
+}
+
 
 size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour )
 {
@@ -140,15 +228,17 @@ size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, 
             pt.b = colour.b + (1.0f-sinf(radi))/4.0f;
 
             // use the cosine of the semi-circle as the radius
-            pt.x = cosf(radj+roffset) * cosf(radi+roffset) * (radius+roffset);
-            pt.y = sinf(radi+roffset) * (radius+roffset);
+            float x = cosf(radj+roffset) * cosf(radi+roffset) * (radius+roffset);
+            float y = sinf(radi+roffset) * (radius+roffset);
+            pt.x = colour.x + x;
+            pt.y = colour.y + y;
             pt.z = sinf(radj+roffset) * cosf(radi+roffset) * (radius+roffset);
             output.push_back(pt);
 
             // flip y to mirror the half sphere
             // flip x to reduce artifacts
-            pt.x = -pt.x;
-            pt.y = -pt.y;
+            pt.x = -x + colour.x;
+            pt.y = -y + colour.y;
             output.push_back(pt);
         }
     }
@@ -175,7 +265,7 @@ size_t gfxGenStars( array::list<vertex> &output, coreInfo &core)
         float ypos = (0.5f - frand()) * core.fSHeight * 2;
         float colour = frand();
 
-        vertex star = { xpos, ypos, 0.0f, colour, colour, colour };
+        vertex star( xpos, ypos, 0.0f, colour, colour, colour );
         output.push_back(star);
     }
 

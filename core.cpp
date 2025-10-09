@@ -91,7 +91,11 @@ inline void coreRenderView( coreInfo &core )
     const int maxs = 100;
     TCHAR text[maxs];
     int si = getShildInf(core);
-    _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝ :%i s"), core.Score, core.Ships, core.Fires, core.iGameLevel-1, si);
+    int it = core.ItemTime.GetTime();
+    if(it > 0)
+        _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝:%i s I:%i s"), core.Score, core.Ships, core.Fires, core.iGameLevel - 1, si, it);
+    else
+        _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝:%i s"), core.Score, core.Ships, core.Fires, core.iGameLevel - 1, si);
     TextOut(core.hDC, core.iCWidth, 2, text, static_cast<int>(_tcslen(text)));
 }
 
@@ -114,8 +118,9 @@ int coreMainThread( )
     core.Score =
     core.Fires = 0;
     core.Ships = 0;
-    core.ShlTime = 3; 
-    core.ShlTiDel = 10;
+    core.ShlTime = core.cShlTime;
+    core.ShlTiDel = core.cShlTiDel;
+    core.FireGun = false;
 
 
     // check if load succeeded
@@ -161,35 +166,55 @@ int coreLoaderThread( coreInfo &core )
     array::list<vertex> plist;
     coreInfo::modPtrs &models = core.models;
     float scale;
+    vertex colour, col1;
 
     // seed random number generator
     srand( sys::getSeed() );
 
     // make ship model
     scale = 1.0f;
-    models.ship.Sets(gfxGenShip(plist, scale, 0.08f, false), scale);
+    colour.SetColor( 1.0f, 0.0f, 1.0f );
+    col1.SetColor( -1.0f, 0.0f, 0.0f );
+    models.ship.Sets( gfxGenShip(plist, scale, 0.08f, colour, col1), scale);
 
-    models.shild.Sets(gfxGenShip(plist, scale, 0.08f, true), scale);
+    col1.SetColor(1.0f, 1.0f, 0.0f);
+    models.shild.Sets(gfxGenShip(plist, scale, 0.08f, colour, col1), scale);
 
     // make misile model, store end points
     scale = 0.5f;
-    vertex colour = { 1.0f, 0.0f, 0.5f, 0.5f, 0.5f, 0.5f };
+    colour.SetColor(0.3f, 0.0f, 0.0f);
     models.misile.Sets(gfxGenAsteroid(plist, scale, 5.0f, colour), scale);
 
     // make tiny asteroid model
     scale = 1.0f;
-    colour.r = 0.2f;  colour.g = 0.3f;  colour.b = 0.2f;
+    colour.SetColor(0.2f, 0.3f, 0.2f);
     models.stroidTiny.Sets(gfxGenAsteroid(plist, scale, 10.0f, colour), scale);
 
     // make medium asteroid model
     scale = 2.0f;
-    colour.r = 0.2f;  colour.g = 0.3f;  colour.b = 0.4f;
+    colour.SetColor(0.2f, 0.3f, 0.4f);
     models.stroidMed.Sets(gfxGenAsteroid(plist, scale, 15.0f, colour), scale);
 
     // make large asteroid model
     scale = 3.0f;
-    colour.r = 0.5f;  colour.g = 0.3f;  colour.b = 0.3f;
+    colour.SetColor(0.5f, 0.3f, 0.3f);
     models.stroidBig.Sets(gfxGenAsteroid(plist, scale, 20.0f, colour), scale);
+
+    scale = 2.5f;
+    colour.SetColor(0.0f, 1.0f, 0.0f);
+    models.ItemFire.Sets(gfxGenItemFire(plist, scale, 0.08f, colour), scale);
+
+    scale = 2.5f;
+    colour.SetColor(0.0f, 1.0f, 0.0f);
+    models.ItemShild.Sets(gfxGenItemShild(plist, scale, 0.08f, colour), scale);
+
+    scale = 2.5f;
+    colour.SetColor(0.0f, 1.0f, 0.0f);
+    models.ItemShip.Sets(gfxGenItemShip(plist, scale, 0.08f, colour), scale);
+
+    scale = 2.5f;
+    colour.SetColor(0.0f, 1.0f, 0.0f);
+    models.ItemFireGun.Sets(gfxGenItemFireGun(plist, scale, 0.08f, colour), scale);
 
     // generate starfield
     scale = 1.0f;
@@ -211,8 +236,13 @@ int coreLoaderThread( coreInfo &core )
     models.stroidMed.Copy(models.stroidTiny.pEnd);
     models.stroidBig.Copy(models.stroidMed.pEnd);
 
+    models.ItemFire.Copy(models.stroidBig.pEnd);
+    models.ItemShild.Copy(models.ItemFire.pEnd);
+    models.ItemShip.Copy(models.ItemShild.pEnd);
+    models.ItemFireGun.Copy(models.ItemShip.pEnd);
+
     // setup star pointers
-    models.stars.Copy(models.stroidBig.pEnd);
+    models.stars.Copy(models.ItemFireGun.pEnd);
 
     // all done, initialize game
     astNewGame( core, true);
