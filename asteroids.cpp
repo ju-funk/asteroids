@@ -6,6 +6,7 @@
 
 KeyMan keys;
 TimerClass secTimer;
+const entity::TypesEnty entity::Items[entity::MaxItems + 1] = { entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::ItFire, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::ItShild, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::ItShip, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::ItFireGun, entity::Zero };
 
 
 inline void astHandleInput( coreInfo &core )
@@ -28,7 +29,7 @@ inline void astHandleInput( coreInfo &core )
         if (spaceship->rz < 0)
             spaceship->rz += M_2PI; // Bereich 0...2Pi
 
-        if(keys.GetKeyState(VK_LBUTTON, KeyMan::MustToggle))
+        if(keys.GetKeyState(VK_LBUTTON, core.FireGun ? 30 : KeyMan::MustToggle))
            astFireBullet(core);
 
         //if(keys.GetKeyState(VK_LBUTTON, 30, KeyMan::eKeyCtrl))    // 19 ==> typeRate, ideal 30
@@ -46,7 +47,7 @@ inline void astHandleInput( coreInfo &core )
             spaceship->speed = -0.01f;
     }
 
-    if(keys.GetKeyState(VK_SPACE, KeyMan::MustToggle))
+    if(keys.GetKeyState(VK_SPACE, core.FireGun ? 30 : KeyMan::MustToggle))
         astFireBullet(core);
 
     if(keys.GetKeyState(VK_UP, KeyMan::IsDown))
@@ -120,15 +121,27 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             break;
 
         case entity::Astro | entity::Astro:
+        case entity::Astro | entity::ItFire:
+        case entity::Astro | entity::ItShild:
+        case entity::Astro | entity::ItShip:
+
+        case entity::ItFire | entity::ItShild:
+        case entity::ItFire | entity::ItShip:
+        case entity::ItShild | entity::ItShip:
+
+        case entity::ItFireGun | entity::ItFire:
+        case entity::ItFireGun | entity::ItShip:
+        case entity::ItFireGun | entity::ItShild:
             // two asteroids collide, switch direction vectors
             enta->swapAstDir(entb, maxdist - dist);
             output.Sound(IDW_COLAST);
             break;
 
         case entity::Fire | entity::Astro:
+        case entity::Fire | entity::Fire:
+
         case entity::Ship | entity::Astro:
         case entity::Ship | entity::Fire:
-        case entity::Fire | entity::Fire:
             // if the first entity is dead, start exploding
             if ( enta->setExplore())
                 output.Sound(IDW_ASTEXP);
@@ -142,6 +155,50 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
         case entity::Shild | entity::Fire:
             entb->setExplore();
             output.Sound(IDW_ASTSHL);
+            break;
+
+        case entity::Fire | entity::ItFire:
+        case entity::Fire | entity::ItShild:
+        case entity::Fire | entity::ItShip:
+        case entity::Fire | entity::ItFireGun:
+            enta->setExplore();
+            entb->setExplore();
+            output.Sound(IDW_ASTEXP);
+            break;
+
+        case entity::Shild | entity::ItShild:
+        case entity::Shild | entity::ItFire:
+        case entity::Shild | entity::ItShip:
+        case entity::Shild | entity::ItFireGun:
+            entb->setExplore();
+            output.Sound(IDW_ASTEXP);
+            break;
+
+        case entity::Ship | entity::ItFire:
+            entb->setExplore();
+            output.Sound(IDW_GETITE);
+            core.Fires += 50;
+            break;
+
+        case entity::Ship | entity::ItFireGun:
+            entb->setExplore();
+            output.Sound(IDW_GETITE);
+            core.FireGun = true;
+            core.ItemTime = 30;
+            secTimer.NewTimer(core.ItemTime,[&core]() {core.FireGun = false;});
+            break;
+
+        case entity::Ship | entity::ItShild:
+            entb->setExplore();
+            core.ShlTime  = core.ShlTime.orgTime + core.cShlTime * 10;
+            core.ShlTiDel = core.ShlTime.orgTime + 1;
+            output.Sound(IDW_GETITE);
+            break;
+
+        case entity::Ship | entity::ItShip:
+            entb->setExplore();
+            output.Sound(IDW_GETITE);
+            ++core.Ships;
             break;
       }
     }
@@ -158,7 +215,7 @@ void astFireBullet( coreInfo &core )
     // copy angle from players space ship
     // allocate new sprite using bullet model
     entity *ship = &*core.sprites.begin();
-    entity bullet( core.models.misile, 0.0f, 0.0f );
+    entity bullet( core.models.misile, 0.0f, 0.0f, entity::Fire);
 
     // copy position
     bullet.pos = ship->pos;
@@ -171,9 +228,8 @@ void astFireBullet( coreInfo &core )
     // set actual speed and set direction
     bullet.speed = 0.7f;
     bullet.setDir( ship->rz );
-    bullet.TypeEnty = entity::Fire;
-    bullet.liveTime = static_cast<DWORD>(40 / bullet.speed) + 1;
-    bullet.currFire = --core.Fires;
+    bullet.liveTime = core.FireGun ? 0 : static_cast<DWORD>(50 / bullet.speed) + 1;
+    bullet.currFire = core.FireGun ? 1 : --core.Fires;
     if (core.Fires == 3)
         output.Sound(IDW_FIRWAR);
 
@@ -201,6 +257,9 @@ void astShipShild(coreInfo& core, bool shild)
         std::lock_guard<std::mutex> lock(core.mtx);
         ship->points = core.models.ship;
         ship->TypeEnty = entity::Ship;
+
+        core.ShlTime = core.cShlTime;
+        core.ShlTiDel = core.cShlTiDel;
     }
 }
 
@@ -220,6 +279,50 @@ int getShildInf(coreInfo& core)
 }
 
 
+inline entity::TypesEnty Itrand(void)
+{
+    entity::TypesEnty item = static_cast<entity::TypesEnty>(rand() / (RAND_MAX / entity::MaxItems));
+
+    return entity::Items[item];
+}
+
+
+
+void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where)
+{
+    int fac = core.iGameLevel - 2;
+    float posrad = M_2PI * frand();
+
+    model newType;
+
+    switch (ty)
+    {
+    case entity::ItFire:
+        newType = core.models.ItemFire;
+        break;
+    case entity::ItShild:
+        newType = core.models.ItemShild;
+        break;
+    case entity::ItShip:
+        newType = core.models.ItemShip;
+        break;
+    case entity::ItFireGun:
+        newType = core.models.ItemFireGun;
+        break;
+    default:
+        return;
+    }
+
+    entity Item(newType, where.x, where.y, ty);
+    Item.health = 1;
+    Item.speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
+    Item.liveTime = static_cast<DWORD>(200 / Item.speed) + 1;
+    Item.setDir(posrad);
+
+    core.sprites.push_back(Item);
+    output.Sound(IDW_START);
+}
+
 
 // ------------------------------------------------------------------
 // spawn asteroids in a circle arround point based on old model type
@@ -227,9 +330,10 @@ int getShildInf(coreInfo& core)
 void astSpawnStroids( coreInfo &core, model *type, vertex &where )
 {
     coreInfo::modPtrs &models = core.models;
+    entity::TypesEnty item = entity::Zero;
 
     // choose sprite details based on old model type
-    model newType = core.models.stroidTiny;
+    model newType = models.stroidTiny;
     int fac = core.iGameLevel - 2;
     int iSpawnCount = 3 + fac;
     int iHealth = 1 + fac;
@@ -238,7 +342,7 @@ void astSpawnStroids( coreInfo &core, model *type, vertex &where )
     if ( type == 0 ) // spawn large asteroids
     {
         newType = models.stroidBig;
-        typeScale = 15.0f;
+        typeScale = models.stroidBig.scale * 5;
         iSpawnCount = core.iGameLevel;
         iHealth = 3 + fac;
     }
@@ -249,7 +353,9 @@ void astSpawnStroids( coreInfo &core, model *type, vertex &where )
         iSpawnCount = 2 + fac;
         iHealth = 2 + fac;
     }
-    // else model is tiny asteroid
+    else // model is tiny asteroid
+        item = Itrand();
+
 
     float posrad = M_2PI*frand(), posinc = M_2PI / iSpawnCount;
     for ( int i = 0; i < iSpawnCount; posrad+=posinc, ++i )
@@ -260,8 +366,7 @@ void astSpawnStroids( coreInfo &core, model *type, vertex &where )
         float ypos = where.y + sinf(posrad) * typeScale;
 
         // make asteroid sprite using player values
-        entity sprite( newType, xpos, ypos );
-        sprite.TypeEnty = entity::Astro;
+        entity sprite( newType, xpos, ypos, entity::Astro );
         sprite.speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
         sprite.health = iHealth;
 
@@ -269,6 +374,12 @@ void astSpawnStroids( coreInfo &core, model *type, vertex &where )
         sprite.setDir( posrad );
         core.sprites.push_back(sprite);
     }
+
+    posrad+=posinc;
+    float xpos = where.x + cosf(posrad) * typeScale;
+    float ypos = where.y + sinf(posrad) * typeScale;
+    vertex who(xpos, ypos);
+    astGenItems(core, item, who);
 }
 
 // ------------------------------------------------------------------
@@ -365,6 +476,10 @@ void astNewGame( coreInfo &core, bool newgame )
     bool levelup = (core.Ships > 0 && !newgame);
 
     secTimer.StopTimer();
+    core.ShlTime = core.cShlTime;
+    core.ShlTiDel = core.cShlTiDel;
+    core.FireGun = false;
+
 
     if (restart)
     {
@@ -372,6 +487,7 @@ void astNewGame( coreInfo &core, bool newgame )
         core.Ships = 3;
         core.Fires = 10;
         core.Score = 0;
+
         output.Sound(IDW_START);
         gfxDrawLoader(core, 3);
     }
@@ -397,8 +513,7 @@ void astNewGame( coreInfo &core, bool newgame )
         --core.Ships;
         gfxDrawLoader(core, 1);
         entity* ship = &*core.sprites.begin();
-        entity nship(core.models.ship, 0.0f, 0.0f);
-        nship.TypeEnty = entity::Ship;
+        entity nship(core.models.ship, 0.0f, 0.0f, entity::Ship);
         *ship = nship;
         if(core.Fires == 0) 
             core.Fires = 3 + core.iGameLevel;
@@ -409,16 +524,29 @@ void astNewGame( coreInfo &core, bool newgame )
     astDeallocSprites(core);
 
     // ship entity must always be first
-    entity player(core.models.ship, 0.0f, 0.0f);
-    player.TypeEnty = entity::Ship;
+    entity player(core.models.ship, 0.0f, 0.0f, entity::Ship);
     core.sprites.push_back(player);
 
     // add starfield
-    entity starfield(core.models.stars, 0.0f, 0.0f);
+    entity starfield(core.models.stars, 0.0f, 0.0f, entity::None);
     core.sprites.push_back(starfield);
 
     // populate space
     astSpawnStroids(core, 0, player.pos);
+
+    /*
+    vertex w1(5.0f, 5.0f);
+    astGenItems(core, entity::ItFire, w1);
+
+    vertex w2(-5.0f, -5.0f);
+    astGenItems(core, entity::ItShild, w2);
+
+    vertex w3(-5.0f, 5.0f);
+    astGenItems(core, entity::ItShip, w3);
+
+    vertex w4(5.0f, -5.0f);
+    astGenItems(core, entity::ItFireGun, w4);
+    */
 }
 
 // unused since perspective turned off
@@ -463,7 +591,7 @@ void astWrapSprite( coreInfo &core, entity &sprite )
 // ------------------------------------------------------------------
 // entity object. constructor. initializes velocity/direction vectors
 // ------------------------------------------------------------------
-entity::entity( model &source, float xpos, float ypos )
+entity::entity( model &source, float xpos, float ypos, TypesEnty typeEnty)
 {
     // set initial position
     pos.x = xpos;
@@ -480,7 +608,7 @@ entity::entity( model &source, float xpos, float ypos )
     points = source;
 
     // set default flags
-    TypeEnty = None;
+    TypeEnty = typeEnty;
 
     // temp health point
     health   = currFire = 1;

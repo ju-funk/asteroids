@@ -388,14 +388,18 @@ bool sys::screen::LoadWaves()
         case IDW_FIRWAR:
             Snd->max_key = 1;
             break;
-        case IDW_FIRESH:
-        case IDW_ASTSHL:
-            Snd->max_key = 2;
-            break;
         case IDW_COLAST:
         case IDW_ASTHIT:
         case IDW_ASTEXP:
             Snd->max_key = 5;
+            break;
+
+        case IDW_FIRESH:
+        case IDW_ASTSHL:
+        case IDW_GETITE:
+        case IDW_GENITE:
+        default:
+            Snd->max_key = 2;
             break;
         }
 

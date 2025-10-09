@@ -30,13 +30,16 @@ struct coreInfo
     {
         model ship, shild, misile, stars;
         model stroidTiny, stroidMed, stroidBig;
+        model ItemFire, ItemShild, ItemShip, ItemFireGun;
     } models;
 
     // other game specific vars
     int iGameLevel;
     DWORD Score, Fires; 
-    TimerClass::tTimerVar  ShlTime, ShlTiDel; 
+    const DWORD cShlTime = 3, cShlTiDel = 10;
+    TimerClass::tTimerVar  ShlTime, ShlTiDel, ItemTime;
     int Ships;
+    bool FireGun;
 };
 
 // prototypes called by core.cpp
