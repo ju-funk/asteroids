@@ -219,6 +219,10 @@ int coreLoaderThread( coreInfo &core )
     // seed random number generator
     srand( sys::getSeed() );
 
+    // generate starfield
+    scale = 1.0f;
+    models.stars.Sets(gfxGenStars(plist, core), scale);
+
     // make ship model
     scale = 1.0f;
     colour.SetColor( 1.0f, 0.0f, 1.0f );
@@ -264,16 +268,15 @@ int coreLoaderThread( coreInfo &core )
     colour.SetColor(0.0f, 1.0f, 0.0f);
     models.ItemFireGun.Sets(gfxGenItemFireGun(plist, scale, 0.08f, colour), scale);
 
-    // generate starfield
-    scale = 1.0f;
-    models.stars.Sets(gfxGenStars(plist, core), scale);
-
     // all models generated, convert to linear array
     if(!core.points.init(plist))
         return coreBadAlloc();
+    
+    // setup star pointers
+    models.stars.Copy(core.points.begin());
 
     // set ship pointers into linear array
-    models.ship.Copy(core.points.begin());
+    models.ship.Copy(models.stars.pEnd);
     models.shild.Copy(models.ship.pEnd);
 
     // setup misile model pointers
@@ -288,9 +291,6 @@ int coreLoaderThread( coreInfo &core )
     models.ItemShild.Copy(models.ItemFire.pEnd);
     models.ItemShip.Copy(models.ItemShild.pEnd);
     models.ItemFireGun.Copy(models.ItemShip.pEnd);
-
-    // setup star pointers
-    models.stars.Copy(models.ItemFireGun.pEnd);
 
     // all done, initialize game
     astNewGame( core, true);

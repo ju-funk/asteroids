@@ -24,11 +24,13 @@ struct coreInfo
     // the players sprite is always
     // first in the list
     array::list<entity> sprites;
+    // ship is on array 1
+    inline entity* GetShip() {return &*(++sprites.begin());}
 
     // group the models in a struct
     struct modPtrs
     {
-        model ship, shild, misile, stars;
+        model stars, ship, shild, misile;
         model stroidTiny, stroidMed, stroidBig;
         model ItemFire, ItemShild, ItemShip, ItemFireGun;
     } models;
