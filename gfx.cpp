@@ -161,20 +161,18 @@ void gfxBlinkStars( coreInfo &core )
     array::block<vertex>::iterator i = core.models.stars.pBegin;
 
     for ( ; i != core.models.stars.pEnd; ++i )
-    {
-        vertex &star = *i;
-        star.r = star.g = star.b = frand();
-    }
+        i->r = i->g = i->b = frand();
 }
 
-size_t gfxGenStars( array::list<vertex> &output, int num )
+size_t gfxGenStars( array::list<vertex> &output, coreInfo &core)
 {
     size_t start = output.size();
 
+    int num = static_cast<int>(1.65e-4f * core.iWidth * core.iHeight);
     for ( int i = 0; i < num; ++i )
     {
-        float xpos = (0.5f - frand()) * 100.0f;
-        float ypos = (0.5f - frand()) * 100.0f;
+        float xpos = (0.5f - frand()) * core.fSWidth * 2;
+        float ypos = (0.5f - frand()) * core.fSHeight * 2;
         float colour = frand();
 
         vertex star = { xpos, ypos, 0.0f, colour, colour, colour };
