@@ -65,4 +65,5 @@ inline float frand( void );
 inline unsigned long int gfxRGB( float r, float g, float b );
 size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, bool shild );
 size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour );
-size_t gfxGenStars( array::list<vertex> &output, int num );
+struct coreInfo;
+size_t gfxGenStars( array::list<vertex> &output, coreInfo& core);

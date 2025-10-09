@@ -193,7 +193,7 @@ int coreLoaderThread( coreInfo &core )
 
     // generate starfield
     scale = 1.0f;
-    models.stars.Sets(gfxGenStars(plist, static_cast<int>(1.65e-4 * core.iWidth * core.iHeight)), scale);
+    models.stars.Sets(gfxGenStars(plist, core), scale);
 
     // all models generated, convert to linear array
     if(!core.points.init(plist))
