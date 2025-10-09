@@ -1,4 +1,4 @@
-#include "main.h"
+﻿#include "main.h"
 #include "core.h"
 
 #include <math.h>
@@ -12,7 +12,7 @@ const entity::TypesEnty entity::Items[entity::MaxItems + 1] = { entity::Zero, en
 inline void astHandleInput( coreInfo &core )
 {
     // a pointer to our spaceship
-    entity *spaceship = &*core.sprites.begin();
+    entity *spaceship = core.GetShip();
     if(spaceship->health == 0)
         return;
 
@@ -208,7 +208,7 @@ void astFireBullet( coreInfo &core )
 
     // copy angle from players space ship
     // allocate new sprite using bullet model
-    entity *ship = &*core.sprites.begin();
+    entity *ship = core.GetShip();
     entity bullet( core.models.misile, 0.0f, 0.0f, entity::Fire);
 
     // copy position
@@ -235,7 +235,7 @@ void astFireBullet( coreInfo &core )
 
 void astShipShild(coreInfo& core, bool shild)
 {
-    entity* ship = &*core.sprites.begin();
+    entity* ship = core.GetShip();
     if (shild)
     {
         if (core.ShlTiDel.GetTime() == 0)
@@ -385,9 +385,7 @@ void astUpdateState( coreInfo &core )
     astHandleInput(core);
 
     // check for game over
-    array::list<entity>::iterator i = core.sprites.begin();
-    entity *ship = &*i;
-    ++i;
+    entity *ship = core.GetShip();
     if (ship->checkShip())
     {
         astNewGame(core, true);
@@ -396,7 +394,8 @@ void astUpdateState( coreInfo &core )
 
     // process all other sprites
     int astCount = 0;
-    ++i;
+    array::list<entity>::iterator i = core.sprites.begin();
+    ++i, ++i;
     while(i != core.sprites.end())
     {
         entity *sprite = &*i;
@@ -491,7 +490,7 @@ void astNewGame( coreInfo &core, bool newgame )
         output.Sound(IDW_LEVEL);
         gfxDrawLoader(core, 2);
 
-        entity *ship = &*core.sprites.begin();
+        entity *ship = core.GetShip();
         if (ship->scale > 1.0)
         {
             --core.Ships;
@@ -506,7 +505,7 @@ void astNewGame( coreInfo &core, bool newgame )
     {
         --core.Ships;
         gfxDrawLoader(core, 1);
-        entity* ship = &*core.sprites.begin();
+        entity* ship = core.GetShip();
         entity nship(core.models.ship, 0.0f, 0.0f, entity::Ship);
         *ship = nship;
         if(core.Fires == 0) 
@@ -517,13 +516,14 @@ void astNewGame( coreInfo &core, bool newgame )
 
     astDeallocSprites(core);
 
-    // ship entity must always be first
+    // add starfield  must always be first
+    entity starfield(core.models.stars, 0.0f, 0.0f, entity::None);
+    core.sprites.push_back(starfield);
+
+    // ship entity always on pos 1
     entity player(core.models.ship, 0.0f, 0.0f, entity::Ship);
     core.sprites.push_back(player);
 
-    // add starfield
-    entity starfield(core.models.stars, 0.0f, 0.0f, entity::None);
-    core.sprites.push_back(starfield);
 
     // populate space
     astSpawnStroids(core, 0, player.pos);
