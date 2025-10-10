@@ -14,7 +14,17 @@ namespace sys
     void userNotice( const TCHAR *szMessage, bool isFatal );
     bool userQuery( const TCHAR *szMessage );
     unsigned long getSeed( void );
+
+#ifdef _DEBUG
+    void DebugOut(const TCHAR* pszFmt, ...);
+#else
+#define DebugOut
+#endif // DEBUG
 }
+
+#define  TRACE0(sz)     sys::DebugOut(sz)
+#define  TRACE1(sz, p1) sys::DebugOut(sz, p1)
+
 
 // ------------------------------------------------------------------
 // screen object
@@ -54,13 +64,6 @@ public:
 
     inline bool IsSetFull() { return msgLoop; }
     inline void SetFull(bool val) {msgLoop = val;}
-
-#ifdef _DEBUG
-    static void DebugOut(const TCHAR* pszFmt, ...);
-#else
-    #define DebugOut
-#endif // DEBUG
-
 
 private:
     // main init function

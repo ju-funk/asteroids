@@ -161,41 +161,46 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             enta->setExplore();
             entb->setExplore();
             output.Sound(IDW_ASTEXP);
+            core.Score += 50;
             break;
 
         case entity::Shild | entity::ItShild:
         case entity::Shild | entity::ItFire:
         case entity::Shild | entity::ItShip:
         case entity::Shild | entity::ItFireGun:
-            entb->setExplore();
+            entb->setExplore(true);
             output.Sound(IDW_ASTEXP);
             break;
 
         case entity::Ship | entity::ItFire:
-            entb->setExplore();
+            entb->setExplore(true);
             output.Sound(IDW_GETITE);
             core.Fires += 50;
+            core.Score += 100;
             break;
 
         case entity::Ship | entity::ItFireGun:
-            entb->setExplore();
+            entb->setExplore(true);
             output.Sound(IDW_GETITE);
             core.FireGun = true;
             core.ItemTime = 30;
             secTimer.NewTimer(core.ItemTime,[&core]() {core.FireGun = false;});
+            core.Score += 100;
             break;
 
         case entity::Ship | entity::ItShild:
-            entb->setExplore();
-            core.ShlTime  = core.ShlTime.orgTime + core.cShlTime * 10;
+            entb->setExplore(true);
+            core.ShlTime  = core.ShlTime.GetTime() + core.cShlTime * 10;
             core.ShlTiDel = core.ShlTime.orgTime + 1;
             output.Sound(IDW_GETITE);
+            core.Score += 100;
             break;
 
         case entity::Ship | entity::ItShip:
-            entb->setExplore();
+            entb->setExplore(true);
             output.Sound(IDW_GETITE);
             ++core.Ships;
+            core.Score += 100;
             break;
       }
     }
@@ -336,7 +341,7 @@ void astSpawnStroids( coreInfo &core, model *type, vertex &where )
     int iHealth = 1 + fac;
     float typeScale = models.stroidTiny.scale + 1.0f;
 
-    if ( type == 0 ) // spawn large asteroids
+    if ( type == nullptr ) // spawn large asteroids
     {
         newType = models.stroidBig;
         typeScale = models.stroidBig.scale * 5;
@@ -529,7 +534,7 @@ void astNewGame( coreInfo &core, bool newgame )
 
 
     // populate space
-    astSpawnStroids(core, 0, player.pos);
+    astSpawnStroids(core, nullptr, player.pos);
 
     /*
     vertex w1(5.0f, 5.0f);
@@ -575,10 +580,11 @@ entity::entity( model &source, float xpos, float ypos, TypesEnty typeEnty)
 }
 
 
-bool entity::setExplore()
+bool entity::setExplore(bool destry)
 {
-    if (!--health)
+    if (!--health || destry)
     {
+        health = 0;
         *this |= entity::None;
         scale += 0.1f;
         pos.z = -10.0f;
