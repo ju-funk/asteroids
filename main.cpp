@@ -4,7 +4,7 @@
 
 // global running status flags
 bool bHasTermSignal = false;
-sys::screen output(_T("dila & ju-funk / 2025"));
+sys::screen output;
 
 
 #ifdef  UNICODE
@@ -15,17 +15,13 @@ sys::screen output(_T("dila & ju-funk / 2025"));
 
 int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
 {
+    // create video buffer in a desktop window
+    if(!output.Create(1280, 720, _T("dila & ju-funk / 2025")))
+        return 0;
+
     // query user about screen mode
     bool bFullScreen = sys::userQuery( _T("Would you like to play in fullscreen mode?") );
-    bool bmouse = true;
-        
-    if(bFullScreen)
-        bmouse = sys::userQuery( _T("Would you like to play with mouse?") );
-
-    // create video buffer in a desktop window
-    output.Create(1280, 720, bFullScreen, bmouse);
-    if ( !output )
-        return 0;
+    output.FullScreen(bFullScreen);
 
     // spawn the render thread. see core.cpp
     std::thread blitter( coreMainThread);
@@ -36,7 +32,7 @@ int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
     }
 
     // process window messages until quit
-    while ( output.doEvents() );
+    while(output.doEvents());
 
     // wait for render thread to exit
     blitter.join();

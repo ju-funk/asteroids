@@ -22,39 +22,38 @@ namespace sys
 class sys::screen
 {
 public:
-    // member operators
-    bool operator !( void ) { return !wasInitialized; }
+    screen() {};
+    bool Create(int width, int height, const TCHAR* szCaption);
+    void FullScreen(bool fullScreen);
 
-    // constructor, cleanup proceedure
-    screen(const TCHAR* szCaption) {pcTitle = szCaption;}
-    void Create(int width, int height, bool fullScreen, bool mouse);
-    ~screen(void) {cleanup();}
+    ~screen(void) { cleanup(); }
     void cleanup(void);
 
     // display setup functions
-    void setCaption( const TCHAR *szCaption );
-    void setVisible( bool state );
-    void flipBuffers( void );
-    void clearBuffer( void );
+    void setVisible(bool state);
+    void flipBuffers(void);
+    void clearBuffer(void);
 
     // event handling function
-    bool doEvents( void );
-    void signalQuit( void ) { PostMessage( hWnd, WM_CLOSE, (WPARAM)this, 0 ); }
+    bool doEvents(void);
+    void signalQuit(void) { PostMessage(hWnd, WM_CLOSE, (WPARAM)this, 0); }
 
     // private accessors
-    bool isVisible( void ) { return bVisibleState; }
-    int getExitCode( void ) { return iExitCode; }
-    unsigned long *getScreenBuffer( void ){ return pBitmap; }
-    int getWidth( void ) { return iWidth; }
-    int getHeight( void ) { return iHeight; }
+    int getExitCode(void) { return iExitCode; }
+    unsigned long* getScreenBuffer(void) { return pBitmap; }
+    int getWidth(void) { return iWidth; }
+    int getHeight(void) { return iHeight; }
 
     HDC Get_DC() { return hVideoDC; }
-    const TCHAR *GetTitle() {return pcTitle;}
+    const TCHAR* GetTitle() { return pcTitle; }
+    HWND GetWnd() {return hWnd;}
 
     bool GetInputState(POINT& mousePos, int& wheel);
     void SetInputState(UINT uMsg, WPARAM wParam, LPARAM lParam);
     void Sound(WORD id);
 
+    inline bool IsSetFull() { return msgLoop; }
+    inline void SetFull(bool val) {msgLoop = val;}
 
 #ifdef _DEBUG
     static void DebugOut(const TCHAR* pszFmt, ...);
@@ -74,39 +73,37 @@ private:
 
     // message handling proceedure
     static LRESULT CALLBACK winDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    int StWheel;
-    bool EnaMouse;
+    int StWheel = 0;
+    bool EnaMouse = true;
+    bool msgLoop = false;
 
     // window members
-    HINSTANCE hInstance;
-    HWND hWnd;
-    HDC hDC;
-    MSG wMsg;
+    HINSTANCE hInstance = nullptr;
+    HWND hWnd = nullptr;
+    HDC hDC = nullptr;
+    MSG wMsg = {};
 
     // gdi members
-    HDC hVideoDC;
-    HBITMAP hBitmap;
-    HGDIOBJ hOldObject;
-    HGDIOBJ hOldFontObj;
-    unsigned long *pBitmap;
-    unsigned long *pBmpEnd;
-    int iBmpSize;
-    int iWidth;
-    int iHeight;
+    HDC hVideoDC = nullptr;
+    HBITMAP hBitmap = nullptr;
+    HGDIOBJ hOldObject = nullptr;
+    HGDIOBJ hOldFontObj = nullptr;
+    unsigned long *pBitmap = nullptr;
+    unsigned long *pBmpEnd = nullptr;
+    int iBmpSize = 0;
+    int iWidth = 0;
+    int iHeight = 0;
 
-    RECT rSize;
-    TCHAR* szClass;
-    const TCHAR* pcTitle;
-    bool bVisibleState;
-    int iExitCode;
+    RECT rSize = {};
+    TCHAR* szClass = nullptr;
+    const TCHAR* pcTitle = nullptr;
+    bool bVisibleState = false;
+    int iExitCode = 0;
 
     // full screen memebrs
-    bool hasFullScreen;
-    DEVMODE dmOriginalConfig;
-
-    // initialized success flag
-    bool wasInitialized;
-
+    bool hasFullScreen = false;
+    DEVMODE dmOriginalConfig = {};
+    LONG_PTR windowStyle = 0, windowExStyle = 0;
 
     // waves  stuff
     const WORD StartHeader = 20;
