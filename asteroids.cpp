@@ -62,6 +62,9 @@ inline void astHandleInput( coreInfo &core )
 
     if(keys.GetKeyState(VK_CONTROL, KeyMan::IsDown, KeyMan::eKeyCtrl))
         spaceship->pos.g = spaceship->pos.r = 0.0f;
+
+    if (keys.GetKeyState(VK_F4, KeyMan::MustToggle))
+        PostMessage(output.GetWnd(), WM_USER + 1, 0, 0);
 }
 
 

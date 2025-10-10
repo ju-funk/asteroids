@@ -28,7 +28,7 @@ void sys::userNotice( const TCHAR *szMessage, bool isFatal )
 bool sys::userQuery( const TCHAR *szMessage )
 {
     // get user response
-    int iResult = MessageBox( 0, szMessage, output.GetTitle(), MB_YESNO | MB_TOPMOST | MB_ICONQUESTION);
+    int iResult = MessageBox( output.GetWnd(), szMessage, output.GetTitle(), MB_YESNO | MB_TOPMOST | MB_ICONQUESTION);
 
     // return user selection
     return iResult == IDYES;
@@ -69,6 +69,49 @@ unsigned long sys::getSeed( void )
 }
 
 
+
+bool sys::screen::Create(int width, int height, const TCHAR* szCaption)
+{
+    pcTitle = szCaption;
+    iWidth = width;
+    iHeight = height;
+
+    // create the window, verify success
+    bool ret = create(false, true, true);
+
+    if(ret && (hWnd != nullptr))
+        SetWindowText(hWnd, szCaption);
+    else
+        sys::userNotice(_T("Can not init Window"), true);
+
+    return ret;
+}
+
+
+// ------------------------------------------------------------------
+// screen object: constructor - create window and set fullscreen
+// ------------------------------------------------------------------
+void sys::screen::FullScreen(bool fullScreen)
+{
+    StWheel = 0;
+
+    // change display mode if required
+    output.setVisible(true);
+    output.clearBuffer();
+    output.flipBuffers();
+
+    if (fullScreen)
+    {
+
+        if (!toggleFullScreen())
+        {
+            // revert to windowed mode on failure
+            userNotice(_T("Sorry, the display mode could not be changed.\nWindowed mode will be used."), false);
+        }
+    }
+}
+
+
 // ------------------------------------------------------------------
 // screen object: winDlgProc - static event handling proceedure
 // ------------------------------------------------------------------
@@ -86,6 +129,10 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
     case WM_MOUSEWHEEL:
         This->SetInputState(WM_MOUSEWHEEL, wParam, lParam);
         break;
+   
+    case WM_USER + 1:
+        output.SetFull(true);
+        break;
 
     case WM_KEYDOWN:
         if ( wParam != VK_ESCAPE )
@@ -102,8 +149,7 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
         else
         {
             // if threads have finished, kill the dialog
-            screen *owner = (screen *)wParam;
-            owner->cleanup();
+            This->cleanup();
         }
         break;
 
@@ -154,40 +200,6 @@ bool sys::screen::GetInputState(POINT& mousePos, int &wheel)
 
 
 // ------------------------------------------------------------------
-// screen object: constructor - create window and set fullscreen
-// ------------------------------------------------------------------
-void sys::screen::Create(int width, int height, bool fullScreen, bool mouse)
-{
-    wasInitialized = false;
-    iWidth  = width;
-    iHeight = height;
-    StWheel = 0;
-    EnaMouse = mouse;
-
-    // change display mode if required
-    if ( fullScreen )
-    {
-        if ( !toggleFullScreen() )
-        {
-            // revert to windowed mode on failure
-            userNotice( _T("Sorry, the display mode could not be changed.\nWindowed mode will be used."), false );
-            fullScreen = false;
-        }
-    }
-
-    // create the window, verify success
-    bool bResult = create( fullScreen, !fullScreen, !fullScreen );
-    if ( !bResult )
-        return;
-
-    // set caption text
-    setCaption(pcTitle);
-
-    // set success flag
-    wasInitialized = true;
-}
-
-// ------------------------------------------------------------------
 // screen object: cleanup - deallocate desktop window resources
 // ------------------------------------------------------------------
 void sys::screen::cleanup( void )
@@ -216,29 +228,37 @@ void sys::screen::cleanup( void )
 // ------------------------------------------------------------------
 bool sys::screen::doEvents( void )
 {
-    BOOL iResult = GetMessage( &wMsg, 0, 0, 0 );
-
-    // handle errors, according to msdn
-    if ( iResult == -1 )
+    if (!output.IsSetFull())
     {
-        userNotice( _T("Window message pump failure."), true );
-        return false;
-    }
+        BOOL iResult = GetMessage(&wMsg, 0, 0, 0);
 
-    // recieved quit message
-    if ( !iResult )
+        // handle errors, according to msdn
+        if (iResult == -1)
+        {
+            userNotice(_T("Window message pump failure."), true);
+            return false;
+        }
+
+        // recieved quit message
+        if (!iResult)
+        {
+            // must return exit code, as described by MSDN
+            iExitCode = (int)wMsg.wParam;
+
+            // signal quit event
+            bHasTermSignal = true;
+            return false;
+        }
+
+        // let windows handle the message
+        TranslateMessage(&wMsg);
+        DispatchMessage(&wMsg);
+    }
+    else
     {
-        // must return exit code, as described by MSDN
-        iExitCode = (int)wMsg.wParam;
-
-        // signal quit event
-        bHasTermSignal = true;
-        return false;
+        output.toggleFullScreen();
+        output.SetFull(false);
     }
-
-    // let windows handle the message
-    TranslateMessage( &wMsg );
-    DispatchMessage( &wMsg );
 
     return true;
 }
@@ -616,7 +636,15 @@ bool sys::screen::toggleFullScreen( void )
     // set fullscreen mode
     if ( !hasFullScreen )
     {
-        // initialize device configuration
+        EnaMouse = sys::userQuery(_T("Would you like to play with mouse?"));
+
+        windowStyle = GetWindowLongPtr(hWnd, GWL_STYLE);
+        windowExStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+        SetWindowLongPtr(hWnd, GWL_STYLE, windowStyle & ~(WS_CAPTION | WS_THICKFRAME));
+        SetWindowLongPtr(hWnd, GWL_EXSTYLE, windowExStyle & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
+        SetWindowPos(hWnd, nullptr, 0, 0, iWidth, iHeight, SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
+       // initialize device configuration
         dmOriginalConfig.dmSize = sizeof(DEVMODE);
         dmOriginalConfig.dmDriverExtra = 0;
 
@@ -650,8 +678,12 @@ bool sys::screen::toggleFullScreen( void )
         // change success, set status flag
         hasFullScreen = true;
     }
-    else  // restore original configurtion
+    else  // restore original configuration
     {
+        SetWindowLongPtr(hWnd, GWL_STYLE, windowStyle);
+        SetWindowLongPtr(hWnd, GWL_EXSTYLE, windowExStyle);
+        SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
         // attempt to restore previous configuration
         LONG iResult = ChangeDisplaySettings( &dmOriginalConfig, CDS_RESET );
 
@@ -662,23 +694,25 @@ bool sys::screen::toggleFullScreen( void )
             ChangeDisplaySettings( 0, 0 );
         }
 
+        int cx = GetSystemMetrics(SM_CXSCREEN);
+        int cy = GetSystemMetrics(SM_CYSCREEN);
+
+        // center window area
+        cx = cx / 2 - iWidth / 2;
+        cy = cy / 2 - iHeight / 2;
+
+        SetWindowPos(hWnd, nullptr, cx, cy, iWidth, iHeight, SWP_NOZORDER);
+
         // display cursor, set status flag
         ShowCursor( true );
         hasFullScreen = false;
+        EnaMouse = true;
     }
 
     // return success
     return true;
 }
 
-// ------------------------------------------------------------------
-// screen object: setCaption - changes window caption bar text
-// ------------------------------------------------------------------
-void sys::screen::setCaption( const TCHAR *szCaption )
-{
-    // update window caption text
-    SetWindowText( hWnd, szCaption );
-}
 
 // ------------------------------------------------------------------
 // screen object: setVisible - show/hide desktop window

@@ -172,15 +172,7 @@ int coreMainThread( )
 
 
     // check if load succeeded
-    output.setVisible(true);
-    output.clearBuffer();
-
-    if ( !coreLoaderThread(core) )
-    {
-        // something went wrong
-        bHasTermSignal = true;
-    }
-    else
+    if (coreLoaderThread(core))
     {
         // main draw loop
         while ( !bHasTermSignal )
