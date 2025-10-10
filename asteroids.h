@@ -10,10 +10,6 @@
 #include <condition_variable>
 
 
-#define  TRACE0(sz)     //output.DebugOut(sz)
-#define  TRACE1(sz, p1) //output.DebugOut(sz, p1)
-
-
 class entity
 {
 public:
@@ -28,7 +24,7 @@ public:
     bool checkShip();
     void TestLive();
     void swapSpeed( entity *with );
-    bool setExplore();
+    bool setExplore(bool destry=false);
 
     // member vars
     vertex pos;
