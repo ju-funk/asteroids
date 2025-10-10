@@ -349,7 +349,7 @@ bool sys::screen::LoadWaves()
     
     auto LoadWave = [&](WORD id, stSound *snd) -> bool
     {
-        HRSRC hRes = FindResource(hInstance, MAKEINTRESOURCE(id), _T("WAVE"));
+        HRSRC hRes = FindResource(hInstance, MAKEINTRESOURCE(id), _T("Wave"));
         if (hRes)
         {
             HGLOBAL hData = LoadResource(hInstance, hRes);
@@ -453,6 +453,7 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     wClass.hInstance = hInstance = GetModuleHandle(0);
     wClass.lpszClassName = szClass = (TCHAR *) _T("dilaDemo");
     wClass.hCursor = LoadCursor( 0, IDC_ARROW );
+    wClass.hIcon   = LoadIcon(hInstance, (LPCTSTR)IPP_ICON);
 
     // attempt create window class
     if ( !RegisterClassEx(&wClass) )

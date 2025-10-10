@@ -16,6 +16,8 @@
 #define IDW_GENITE                     110
 #define IDW_ENDWAV                     111
 
+#define IPP_ICON                       200
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
