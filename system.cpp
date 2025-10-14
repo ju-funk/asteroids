@@ -571,6 +571,83 @@ void sys::screen::clearBuffer( void )
 }
 
 
+/////////////////////////////////////////////////////////////////////
+//// Key Handling
+/////////////////////////////////////////////////////////////////////
+
+
+bool KeyMan::GetKeyState(int Key, int Todo, int extkey)
+{
+    bool ret = false, down = false;
+
+    if(!output.IsActiv())
+        return false;
+
+    short ekey = (GetAsyncKeyState(VK_SHIFT) & 0x8000) ? eKeyShift : 0;
+    ekey |= (GetAsyncKeyState(VK_CONTROL) & 0x8000) ? eKeyCtrl : 0;
+    ekey |= (GetAsyncKeyState(VK_MENU) & 0x8000) ? eKeyAlt : 0;
+
+    if (ekey != extkey)
+        return false;
+
+
+    short state = GetAsyncKeyState(Key);
+
+    switch (Todo)
+    {
+    case IsDown:
+        return ((state & 0x8000) == 0x8000);
+    case MustToggle:
+    {
+        kdat& dat = GetKDat(Key, extkey);
+        if (!dat.isPress)
+        {
+            dat.isPress = ((state & 0x8000) == 0x8000);
+            return dat.isPress;
+        }
+        else
+        {
+            dat.isPress = ((state & 0x8001) != 0);
+            return false;
+        }
+    }
+    default:  // timer
+    {
+        kdat& dat = GetKDat(Key, extkey);
+
+        if ((state & 0x8000) == 0x8000)
+        {
+            auto now = std::chrono::steady_clock::now();
+            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - dat.last).count();
+            if (ms > Todo)
+            {
+                dat.last = now;
+                return true;
+            }
+        }
+
+        return false;
+    }
+    }
+
+    return ret;
+}
+
+
+KeyMan::kdat& KeyMan::GetKDat(int Key, int extkey)
+{
+    auto it = std::find_if(vkDat.begin(), vkDat.end(), [Key, extkey](kdat& v) { return v.Key == Key && v.extKeys == extkey; });
+    if (it != vkDat.end())
+        return *it;
+
+    kdat dat(Key, extkey);
+    vkDat.push_back(dat);
+
+    return *std::prev(vkDat.end());
+}
+
+
+
 
 
 /////////////////////////////////////////////////////////////////////

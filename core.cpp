@@ -1,6 +1,5 @@
 ﻿#include "main.h"
 #include "core.h"
-#include <TCHAR.h>
 
 
 // unused since perspective turned off
