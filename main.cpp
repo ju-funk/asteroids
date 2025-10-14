@@ -1,10 +1,11 @@
 #include "main.h"
 #include "core.h"
-#include <thread>
 
 // global running status flags
 bool bHasTermSignal = false;
 sys::screen output;
+KeyMan keys;
+TimerClass secTimer;
 
 
 #ifdef  UNICODE

@@ -4,8 +4,11 @@
 #include <stdlib.h>
 #include "array.h"
 #include "system.h"
-#include <tchar.h>
 
 // global running state flags
 extern bool bHasTermSignal;
 extern sys::screen output;
+extern KeyMan keys;
+extern TimerClass secTimer;
+
+
