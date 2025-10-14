@@ -98,8 +98,8 @@ inline void coreRenderView( coreInfo &core )
 
             // adjust z position and scale
             //pv.z = core.fZOrigin + pv.z;
-            pv.x = pv.x * core.fScaleX;// / pv.z;
-            pv.y = pv.y * core.fScaleY;// / pv.z;
+            pv.x *= core.fScaleX;// / pv.z;
+            pv.y *= core.fScaleY;// / pv.z;
 
             // if exploding, fade out colours
             if ( sprite->scale > 1.0f )
@@ -143,7 +143,7 @@ inline void coreRenderView( coreInfo &core )
         _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝:%i s I:%i s"), core.Score, core.Ships, core.Fires, core.iGameLevel - 1, si, it);
     else
         _stprintf_s(text, _T("%li ▲:%i ●:%li L:%i ۝:%i s"), core.Score, core.Ships, core.Fires, core.iGameLevel - 1, si);
-    TextOut(core.hDC, core.iCWidth, 2, text, static_cast<int>(_tcslen(text)));
+    output.StrOutText(text, core.iCWidth, 2);
 }
 
 int coreMainThread( )
@@ -162,8 +162,9 @@ int coreMainThread( )
     core.fSHeight = core.iCHeight / core.fScaleY;
     core.hDC    =  output.Get_DC();
 
+    core.iGameLevel =
     core.Score =
-    core.Fires = 0;
+    core.Fires = 
     core.Ships = 0;
     core.ShlTime = core.cShlTime;
     core.ShlTiDel = core.cShlTiDel;

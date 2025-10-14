@@ -20,7 +20,6 @@ namespace sys
 
     // native api wrappers
     void userNotice( const TCHAR *szMessage, bool isFatal );
-    bool userQuery( const TCHAR *szMessage );
     unsigned long getSeed( void );
 
 #ifdef _DEBUG
@@ -42,13 +41,11 @@ class sys::screen
 public:
     screen() {};
     bool Create(int width, int height, const TCHAR* szCaption);
-    void FullScreen(bool fullScreen);
 
     ~screen(void) { cleanup(); }
     void cleanup(void);
 
     // display setup functions
-    void setVisible(bool state);
     void flipBuffers(void);
     void clearBuffer(void);
 
@@ -62,9 +59,16 @@ public:
     int getWidth(void) { return iWidth; }
     int getHeight(void) { return iHeight; }
 
-    HDC Get_DC() { return hVideoDC; }
-    const TCHAR* GetTitle() { return pcTitle; }
-    HWND GetWnd() {return hWnd;}
+    inline HDC Get_DC() { return hVideoDC; }
+    inline const TCHAR* GetTitle() { return pcTitle; }
+    inline HWND GetWnd() {return hWnd;}
+    inline bool GetFullScr() {return hasFullScreen;}
+    bool GetTogMouse(bool ena = false)
+    {
+        if(ena)
+            EnaMouse = !EnaMouse;
+        return EnaMouse;
+    }
 
     bool GetInputState(POINT& mousePos, int& wheel);
     void SetInputState(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -73,17 +77,28 @@ public:
 
     void Sound(WORD id);
 
-    inline bool IsSetFull() { return msgLoop; }
-    inline void SetFull(bool val) {msgLoop = val;}
+
+    void SetNewFont(const TCHAR* Fn, int Size = 24, int Ta = TA_CENTER, int Bm = TRANSPARENT, int cF = 0, COLORREF ClTx = RGB(255, 255, 0), COLORREF ClBa = RGB(0, 0, 0));
+    void StrOutText(const TCHAR* Str, int x, int y) const {
+        TextOut(hVideoDC, x, y, Str, static_cast<int>(_tcslen(Str)));
+    }
+
+    SIZE GetTextSize(const TCHAR* text);
+
+
+
 
 private:
     // main init function
-    bool create( bool topMost, bool hasCaption, bool scrCenter );
+    bool create();
     bool LoadWaves();
     void CleanWave();
+    void setVisible(bool state);
 
     // fullscreen helper
     bool toggleFullScreen(void);
+    inline bool IsSetFull() const { return msgLoop; }
+    inline void SetFull(bool val) {msgLoop = val;}
 
     // message handling proceedure
     static LRESULT CALLBACK winDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -103,7 +118,6 @@ private:
     HGDIOBJ hOldObject = nullptr;
     HGDIOBJ hOldFontObj = nullptr;
     unsigned long *pBitmap = nullptr;
-    unsigned long *pBmpEnd = nullptr;
     int iBmpSize = 0;
     int iWidth = 0;
     int iHeight = 0;
@@ -117,7 +131,7 @@ private:
     // full screen memebrs
     bool hasFullScreen = false;
     DEVMODE dmOriginalConfig = {};
-    LONG_PTR windowStyle = 0, windowExStyle = 0;
+    LONG_PTR windowStyle = 0;
 
     // waves  stuff
     const WORD StartHeader = 20;

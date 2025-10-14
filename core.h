@@ -49,6 +49,8 @@ void gfxDrawLoader( coreInfo &info, int loop );
 void gfxBlinkStars( coreInfo &core );
 void astWrapSprite( coreInfo &core, entity &sprite );
 
+bool ShowStart(coreInfo &core);
+
 void astDeallocSprites( coreInfo &core );
 
 // thread entry proceedures in core.cpp

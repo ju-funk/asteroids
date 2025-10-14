@@ -6,7 +6,7 @@
 void sys::userNotice( const TCHAR *szMessage, bool isFatal )
 {
     unsigned long int iType = MB_OK|MB_TOPMOST;
-    const TCHAR *szCaption;
+    const TCHAR *szCaption = output.GetTitle();
 
     if ( isFatal )
     {
@@ -20,18 +20,6 @@ void sys::userNotice( const TCHAR *szMessage, bool isFatal )
     }
 
     MessageBox( 0, szMessage, szCaption, iType );
-}
-
-// ------------------------------------------------------------------
-// free function: userQuery - displays standard windows dialog
-// ------------------------------------------------------------------
-bool sys::userQuery( const TCHAR *szMessage )
-{
-    // get user response
-    int iResult = MessageBox( output.GetWnd(), szMessage, output.GetTitle(), MB_YESNO | MB_TOPMOST | MB_ICONQUESTION);
-
-    // return user selection
-    return iResult == IDYES;
 }
 
 // ------------------------------------------------------------------
@@ -97,38 +85,18 @@ bool sys::screen::Create(int width, int height, const TCHAR* szCaption)
     iHeight = height;
 
     // create the window, verify success
-    bool ret = create(false, true, true);
+    bool ret = create();
 
     if(ret && (hWnd != nullptr))
         SetWindowText(hWnd, szCaption);
     else
         sys::userNotice(_T("Can not init Window"), true);
+   
+    setVisible(true);
+    clearBuffer();
+    flipBuffers();
 
     return ret;
-}
-
-
-// ------------------------------------------------------------------
-// screen object: constructor - create window and set fullscreen
-// ------------------------------------------------------------------
-void sys::screen::FullScreen(bool fullScreen)
-{
-    StWheel = 0;
-
-    // change display mode if required
-    output.setVisible(true);
-    output.clearBuffer();
-    output.flipBuffers();
-
-    if (fullScreen)
-    {
-
-        if (!toggleFullScreen())
-        {
-            // revert to windowed mode on failure
-            userNotice(_T("Sorry, the display mode could not be changed.\nWindowed mode will be used."), false);
-        }
-    }
 }
 
 
@@ -162,15 +130,9 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
     case WM_CLOSE:
         // if threads are running, signal quit
         if ( !bHasTermSignal )
-        {
             bHasTermSignal = true;
-            This->setVisible(false);
-        }
         else
-        {
-            // if threads have finished, kill the dialog
-            This->cleanup();
-        }
+            This->cleanup();  // if threads have finished, kill the dialog
         break;
 
     case WM_DESTROY:
@@ -248,7 +210,7 @@ void sys::screen::cleanup( void )
 // ------------------------------------------------------------------
 bool sys::screen::doEvents( void )
 {
-    if (!output.IsSetFull())
+    if (!IsSetFull())
     {
         BOOL iResult = GetMessage(&wMsg, 0, 0, 0);
 
@@ -276,8 +238,8 @@ bool sys::screen::doEvents( void )
     }
     else
     {
-        output.toggleFullScreen();
-        output.SetFull(false);
+        toggleFullScreen();
+        SetFull(false);
     }
 
     return true;
@@ -287,7 +249,7 @@ bool sys::screen::doEvents( void )
 // ------------------------------------------------------------------
 // screen object: create - create window and video buffer
 // ------------------------------------------------------------------
-bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
+bool sys::screen::create()
 {
     winDlgProc(0, WM_NULL, 0, reinterpret_cast<LPARAM>(this));  //init Win Dlg function with this pointer
 
@@ -313,9 +275,7 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     rSize.left = rSize.top = 0;
 
     // determine window style
-    DWORD dwStyle = WS_POPUP|WS_CLIPSIBLINGS|WS_CLIPCHILDREN|WS_MAXIMIZE;
-    if ( hasCaption )
-        dwStyle = WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+    DWORD dwStyle = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
     // get window to caluclate exact size of window based on style
     if ( !AdjustWindowRectEx(&rSize, dwStyle, 0, 0) )
@@ -329,29 +289,12 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     rSize.right -= rSize.left;
     rSize.bottom -= rSize.top;
 
-    // if centered, set top/left
-    if ( scrCenter )
-    {
-        // get screen center
-        int cx = GetSystemMetrics( SM_CXSCREEN );
-        int cy = GetSystemMetrics( SM_CYSCREEN );
+    int cx = GetSystemMetrics( SM_CXSCREEN );
+    int cy = GetSystemMetrics( SM_CYSCREEN );
 
-        if ( !cx || !cy )
-        {
-            UnregisterClass( szClass, hInstance );
-            userNotice( _T("Could not determine current screen dimensions."), true );
-            return false;
-        }
-
-        // center window area
-        rSize.left = cx/2 - iWidth/2;
-        rSize.top = cy/2 - iHeight/2;
-    }
-    else
-    {
-        // set top left of screen
-        rSize.left = rSize.top = 0;
-    }
+    // center window area
+    rSize.left = cx/2 - iWidth/2;
+    rSize.top = cy/2 - iHeight/2;
 
     // create the window with desired attributes
     hWnd = CreateWindowEx( 0, szClass, 0, dwStyle, rSize.left,
@@ -378,10 +321,6 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
         return false;
     }
 
-    // force desktop zpos, if required
-    if ( topMost )
-        SetWindowPos( hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE );
-
     // create new device handle from window context
     hVideoDC = CreateCompatibleDC( hDC );
 
@@ -394,16 +333,6 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
         userNotice( _T("Unable to create new device context."), true );
         return false;
     }
-
-    HFONT hFont = CreateFont(24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-        ANSI_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, _T("Arial"));
-    hOldFontObj = SelectObject(hVideoDC, hFont);
-
-    SetTextColor(hVideoDC, RGB(255, 255, 0));
-    SetBkColor(hVideoDC, RGB(0, 0, 0));
-    SetBkMode(hVideoDC, TRANSPARENT);
-    SetTextAlign(hVideoDC, TA_CENTER);
-
 
     // fill bitmap info struct
     BITMAPINFO lpBmpInfo = { 0 };
@@ -421,7 +350,6 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     // verify object was created
     if ( !hBitmap )
     {
-        DeleteObject(hOldFontObj);
         DeleteDC( hVideoDC );
         ReleaseDC( hWnd, hDC );
         DestroyWindow( hWnd );
@@ -431,7 +359,6 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     }
 
     // store address of buffer end and set size
-    pBmpEnd = pBitmap + iWidth*iHeight;
     iBmpSize = iWidth*iHeight * sizeof(unsigned long);
 
     // select GDI object into new device context
@@ -441,7 +368,6 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     if ( !hOldObject )
     {
         DeleteObject( hBitmap );
-        DeleteObject(hOldFontObj);
         DeleteDC( hVideoDC );
         ReleaseDC( hWnd, hDC );
         DestroyWindow( hWnd );
@@ -453,6 +379,34 @@ bool sys::screen::create( bool topMost, bool hasCaption, bool scrCenter )
     return LoadWaves();
 }
 
+void sys::screen::SetNewFont(const TCHAR *Fn, int Size, int Ta, int Bm, int cF, COLORREF ClTx, COLORREF ClBa)
+{
+    if (hOldFontObj != nullptr)
+    {
+        hOldFontObj = SelectObject(hVideoDC, hOldFontObj);
+        DeleteObject(hOldFontObj);
+    }
+
+    HFONT hFont = CreateFont(Size, 0, 0, 0, (cF & 1) == 1 ? FW_BOLD : FW_NORMAL, (cF & 2) == 2 ? TRUE : FALSE, (cF & 4) == 4 ? TRUE : FALSE, FALSE,
+        ANSI_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, Fn);
+    hOldFontObj = SelectObject(hVideoDC, hFont);
+
+    SetTextColor(hVideoDC, ClTx);
+    SetBkColor(hVideoDC, ClBa);
+    SetBkMode(hVideoDC, Bm);
+    SetTextAlign(hVideoDC, Ta);
+}
+
+SIZE sys::screen::GetTextSize(const TCHAR* text)
+{
+    SIZE size;
+    TEXTMETRIC tm;
+    GetTextMetrics(hVideoDC, &tm);
+    GetTextExtentPoint32(hVideoDC, text, static_cast<int>(_tcslen(text)), &size);
+    size.cy = tm.tmAscent;
+    return size;
+}
+
 // ------------------------------------------------------------------
 // screen object: toggleFullScreen - change display resolution
 // ------------------------------------------------------------------
@@ -461,12 +415,8 @@ bool sys::screen::toggleFullScreen( void )
     // set fullscreen mode
     if ( !hasFullScreen )
     {
-        EnaMouse = sys::userQuery(_T("Would you like to play with mouse?"));
-
         windowStyle = GetWindowLongPtr(hWnd, GWL_STYLE);
-        windowExStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
         SetWindowLongPtr(hWnd, GWL_STYLE, windowStyle & ~(WS_CAPTION | WS_THICKFRAME));
-        SetWindowLongPtr(hWnd, GWL_EXSTYLE, windowExStyle & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
         SetWindowPos(hWnd, nullptr, 0, 0, iWidth, iHeight, SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 
        // initialize device configuration
@@ -505,28 +455,14 @@ bool sys::screen::toggleFullScreen( void )
     }
     else  // restore original configuration
     {
-        SetWindowLongPtr(hWnd, GWL_STYLE, windowStyle);
-        SetWindowLongPtr(hWnd, GWL_EXSTYLE, windowExStyle);
-        SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
-
         // attempt to restore previous configuration
         LONG iResult = ChangeDisplaySettings( &dmOriginalConfig, CDS_RESET );
-
         // verify display mode was restored
         if ( iResult != DISP_CHANGE_SUCCESSFUL )
-        {
-            // restore display with registry settings
-            ChangeDisplaySettings( 0, 0 );
-        }
+            ChangeDisplaySettings( nullptr, 0 );// restore display with registry settings
 
-        int cx = GetSystemMetrics(SM_CXSCREEN);
-        int cy = GetSystemMetrics(SM_CYSCREEN);
-
-        // center window area
-        cx = cx / 2 - iWidth / 2;
-        cy = cy / 2 - iHeight / 2;
-
-        SetWindowPos(hWnd, nullptr, cx, cy, iWidth, iHeight, SWP_NOZORDER);
+        SetWindowLongPtr(hWnd, GWL_STYLE, windowStyle);
+        SetWindowPos(hWnd, nullptr, rSize.left, rSize.top, rSize.right, rSize.bottom, SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 
         // display cursor, set status flag
         ShowCursor( true );

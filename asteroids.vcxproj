@@ -23,6 +23,7 @@
     <ClCompile Include="core.cpp" />
     <ClCompile Include="gfx.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Start.cpp" />
     <ClCompile Include="system.cpp" />
   </ItemGroup>
   <ItemGroup>

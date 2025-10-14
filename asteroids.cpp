@@ -56,9 +56,6 @@ inline void astHandleInput( coreInfo &core )
 
 //    if(keys.GetKeyState(VK_END, KeyMan::MustToggle))
 //        spaceship->pos.g = spaceship->pos.r = 0.0f;
-
-    if (keys.GetKeyState(VK_F4, KeyMan::MustToggle))
-        PostMessage(output.GetWnd(), WM_USER + 1, 0, 0);
 }
 
 
@@ -286,7 +283,7 @@ inline entity::TypesEnty Itrand(void)
 
 
 
-void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where)
+void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where, bool start)
 {
     int fac = core.iGameLevel - 2;
     float posrad = M_2PI * frand();
@@ -312,8 +309,11 @@ void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where)
     }
 
     entity Item(newType, where.x, where.y, ty);
-    Item.health = 2;
-    Item.speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
+    Item.health = 1;
+    if(start)
+        Item.speed = 0.0;
+    else
+        Item.speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
     Item.liveTime = static_cast<DWORD>(200 / Item.speed) + 1;
     Item.setDir(posrad);
 
@@ -480,6 +480,9 @@ void astNewGame( coreInfo &core, bool newgame )
 
     if (restart)
     {
+        if(!ShowStart(core))
+            return;
+
         core.iGameLevel = 2;
         core.Ships = 3;
         core.Fires = 10;
