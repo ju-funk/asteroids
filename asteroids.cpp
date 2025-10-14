@@ -26,22 +26,19 @@ inline void astHandleInput( coreInfo &core )
         if (spaceship->rz < 0)
             spaceship->rz += M_2PI; // Bereich 0...2Pi
 
-        if(keys.GetKeyState(VK_LBUTTON, core.FireGun ? 30 : KeyMan::MustToggle))
+        if(keys.GetKeyState(VK_LBUTTON, core.FireGun ? 30 : KeyMan::MustToggle))  // 19 ==> typeRate, ideal 30
            astFireBullet(core);
 
-        //if(keys.GetKeyState(VK_LBUTTON, 30, KeyMan::eKeyCtrl))    // 19 ==> typeRate, ideal 30
-        //   astFireBullet(core);
-
-        if(keys.GetKeyState(VK_MBUTTON, KeyMan::MustToggle))
-            spaceship->pos.g = spaceship->pos.r = 0.0f;
+        //if(keys.GetKeyState(VK_MBUTTON, KeyMan::MustToggle))
+        //    spaceship->pos.g = spaceship->pos.r = 0.0f;
 
         if(keys.GetKeyState(VK_RBUTTON, KeyMan::MustToggle)) 
             astShipShild(core, true);
 
         if((wheel & 1) == 1)
-            spaceship->speed = 0.02f;
+            spaceship->speed = 0.03f;
         if((wheel & 2) == 2)
-            spaceship->speed = -0.02f;
+            spaceship->speed = -0.03f;
     }
 
     if(keys.GetKeyState(VK_SPACE, core.FireGun ? 30 : KeyMan::MustToggle))
@@ -53,12 +50,12 @@ inline void astHandleInput( coreInfo &core )
         spaceship->speed = -0.01f;
 
     if(keys.GetKeyState(VK_LEFT, KeyMan::IsDown))
-        spaceship->rz -= 0.06f;
+        spaceship->rz -= 0.04f;
     if(keys.GetKeyState(VK_RIGHT, KeyMan::IsDown))
-        spaceship->rz += 0.06f;
+        spaceship->rz += 0.04f;
 
-    if(keys.GetKeyState(VK_CONTROL, KeyMan::IsDown, KeyMan::eKeyCtrl))
-        spaceship->pos.g = spaceship->pos.r = 0.0f;
+//    if(keys.GetKeyState(VK_END, KeyMan::MustToggle))
+//        spaceship->pos.g = spaceship->pos.r = 0.0f;
 
     if (keys.GetKeyState(VK_F4, KeyMan::MustToggle))
         PostMessage(output.GetWnd(), WM_USER + 1, 0, 0);
@@ -161,7 +158,6 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             core.Score += 50;
             break;
 
-        case entity::Shild | entity::ItShild:
         case entity::Shild | entity::ItFire:
         case entity::Shild | entity::ItShip:
         case entity::Shild | entity::ItFireGun:
@@ -185,9 +181,12 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             core.Score += 100;
             break;
 
-        case entity::Ship | entity::ItShild:
+        case entity::Shild | entity::ItShild:
+            core.ShlTime.currTime  = core.ShlTime.GetTime() + core.cShlTime * 10;
+            core.ShlTiDel.currTime = core.ShlTime.GetTime() + 1;
+        case entity::Ship  | entity::ItShild:
             entb->setExplore(true);
-            core.ShlTime  = core.ShlTime.GetTime() + core.cShlTime * 10;
+            core.ShlTime  = core.cShlTime * 10;
             core.ShlTiDel = core.ShlTime.orgTime + 1;
             output.Sound(IDW_GETITE);
             core.Score += 100;
@@ -227,7 +226,7 @@ void astFireBullet( coreInfo &core )
     // set actual speed and set direction
     bullet.speed = 0.7f;
     bullet.setDir( ship->rz );
-    bullet.liveTime = core.FireGun ? 0 : static_cast<DWORD>(50 / bullet.speed) + 1;
+    bullet.liveTime = core.FireGun ? 0 : static_cast<DWORD>(45 / bullet.speed) + 1;
     bullet.currFire = core.FireGun ? 1 : --core.Fires;
     if (core.Fires == 3)
         output.Sound(IDW_FIRWAR);
