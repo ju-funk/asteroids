@@ -50,6 +50,7 @@ int getShildInf(coreInfo& core);
 void astNewGame(coreInfo& core, bool newgame);
 void astUpdateState(coreInfo& core);
 void astCheckCollision(coreInfo& core, entity* enta, entity* entb);
+void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where, bool start = false);
 
 
 
