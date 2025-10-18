@@ -42,12 +42,23 @@
     <ResourceCompile Include="asteroids.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Media Include="waves\AstExp.wav" />
     <Media Include="waves\Asthit.wav" />
+    <Media Include="waves\AstShld.wav" />
+    <Media Include="waves\ColAst.wav" />
     <Media Include="waves\CollAst.wav" />
     <Media Include="waves\Fire.wav" />
+    <Media Include="waves\FireSh.wav" />
+    <Media Include="waves\FireWar.wav" />
+    <Media Include="waves\GenItem.wav" />
+    <Media Include="waves\GetItem.wav" />
     <Media Include="waves\Level.wav" />
+    <Media Include="waves\ShipEx.wav" />
     <Media Include="waves\Shipexpl.wav" />
     <Media Include="waves\Start.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="asteroids.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
