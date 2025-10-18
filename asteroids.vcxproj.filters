@@ -86,10 +86,39 @@
     <Media Include="waves\Start.wav">
       <Filter>Waves</Filter>
     </Media>
+    <Media Include="waves\AstExp.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\AstShld.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\ColAst.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\FireSh.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\FireWar.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\GenItem.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\GetItem.wav">
+      <Filter>Waves</Filter>
+    </Media>
+    <Media Include="waves\ShipEx.wav">
+      <Filter>Waves</Filter>
+    </Media>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="asteroids.rc">
       <Filter>Resource</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="asteroids.ico">
+      <Filter>Resource</Filter>
+    </Image>
   </ItemGroup>
 </Project>
