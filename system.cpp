@@ -78,6 +78,124 @@ void sys::DebugOut(const TCHAR* pszFmt, ...)
 ////////////////////////////////////////////////////////////
 
 
+sys::screen::screen()
+{
+    LoadSetup();
+}
+
+
+sys::screen::~screen()
+{
+    SaveSetup();
+    cleanup();
+}
+
+template<class T>
+DWORD32 crc32(const T* dat, size_t length)
+{
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(dat);
+
+    uint32_t crc = 0xFFFFFFFF;
+    for (size_t i = 0; i < length; i++)
+    {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++)
+        {
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xEDB88320;
+            else
+                crc = crc >> 1;
+        }
+    }
+    return ~crc;
+}
+
+
+
+void sys::screen::LoadSetup()
+{
+    using FileHandle = std::unique_ptr<std::remove_pointer_t<HANDLE>, decltype(&CloseHandle)>;
+    FileHandle hFile(::CreateFile(SetName, GENERIC_READ, FILE_SHARE_READ, NULL,
+        OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL), &CloseHandle);
+
+    if (hFile.get() != INVALID_HANDLE_VALUE)
+    {
+        LARGE_INTEGER fileSizeLI;
+        if (::GetFileSizeEx(hFile.get(), &fileSizeLI))
+        {
+            DWORD datRe, fileSize = static_cast<DWORD>(fileSizeLI.QuadPart);
+
+            usetup = std::make_unique<BYTE[]>(fileSize);
+            setup = reinterpret_cast<_setup*>(usetup.get());
+            setup->ExaSize = fileSize - _setupLen;
+
+            if (::ReadFile(hFile.get(), setup, fileSize, &datRe, nullptr))
+            {
+                DWORD32 crc1, crc = setup->crc;
+                setup->crc = 0;
+                crc1 = crc32(setup, fileSize);
+                if (crc1 == crc)
+                    return;
+                else
+                    sys::userNotice(_T("Setup-file is corrupt"), true);
+            }
+        }
+    }
+
+    usetup = std::make_unique<BYTE[]>(_setupLen);
+    setup = reinterpret_cast<_setup*>(usetup.get());
+    setup->ExaSize = 0;
+    /////////
+    //  set default
+}
+
+void sys::screen::SaveSetup()
+{
+    HANDLE hFile = ::CreateFile(SetName, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
+        CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE)
+    {
+        sys::userNotice(_T("Trouble create the setup-file"), true);
+        return;
+    }
+
+    DWORD bw, Len = setup->ExaSize + _setupLen;
+    setup->crc = 0;
+    setup->crc = crc32(setup, Len);
+    if (!::WriteFile(hFile, setup, Len, &bw, NULL))
+        sys::userNotice(_T("Trouble write the setup-file"), true);
+
+    ::CloseHandle(hFile);
+}
+
+BYTE* sys::screen::GetHiScPtr(DWORD& len)
+{
+    len = setup->ExaSize;
+    if(len != 0)
+        return reinterpret_cast<BYTE*>(&setup->HiSoSta);
+    else
+        return nullptr;
+}
+
+void sys::screen::SetNewHiScr(BYTE* dat, DWORD len)
+{
+    _setup tmp;
+    memcpy(&tmp, setup, _setupLen);
+
+    usetup = std::make_unique<BYTE[]>(len + _setupLen);
+    setup = reinterpret_cast<_setup*>(usetup.get());
+
+    memcpy(setup, &tmp, _setupLen);
+    setup->ExaSize = len;
+    memcpy(&setup->HiSoSta, dat, len);
+
+    SaveSetup();
+}
+
+
+
+
 bool sys::screen::Create(int width, int height, const TCHAR* szCaption)
 {
     pcTitle = szCaption;
@@ -105,17 +223,10 @@ bool sys::screen::Create(int width, int height, const TCHAR* szCaption)
 // ------------------------------------------------------------------
 LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-    static sys::screen* This = nullptr;
-
     switch( uMsg )
     {
-    case WM_NULL:
-        if(hWnd == 0 && wParam == 0)
-            This = reinterpret_cast<sys::screen*>(lParam);
-        break;
-
     case WM_MOUSEWHEEL:
-        This->SetInputState(WM_MOUSEWHEEL, wParam, lParam);
+        output.SetInputState(WM_MOUSEWHEEL, wParam, lParam);
         break;
    
     case WM_USER + 1:
@@ -132,7 +243,7 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
         if ( !bHasTermSignal )
             bHasTermSignal = true;
         else
-            This->cleanup();  // if threads have finished, kill the dialog
+            output.cleanup();  // if threads have finished, kill the dialog
         break;
 
     case WM_DESTROY:
@@ -186,6 +297,9 @@ bool sys::screen::GetInputState(POINT& mousePos, int &wheel)
 // ------------------------------------------------------------------
 void sys::screen::cleanup( void )
 {
+    if(hWnd == nullptr)
+        return;
+
     // reset display mode
     if ( hasFullScreen )
         toggleFullScreen();
@@ -203,6 +317,7 @@ void sys::screen::cleanup( void )
     ReleaseDC( hWnd, hDC );
     DestroyWindow( hWnd );
     UnregisterClass( szClass, hInstance );
+    hWnd = nullptr;
 }
 
 // ------------------------------------------------------------------
@@ -251,8 +366,6 @@ bool sys::screen::doEvents( void )
 // ------------------------------------------------------------------
 bool sys::screen::create()
 {
-    winDlgProc(0, WM_NULL, 0, reinterpret_cast<LPARAM>(this));  //init Win Dlg function with this pointer
-
     // fill class struct
     WNDCLASSEX wClass = { 0 };
     wClass.cbSize = sizeof(WNDCLASSEX);
@@ -405,6 +518,16 @@ SIZE sys::screen::GetTextSize(const TCHAR* text)
     GetTextExtentPoint32(hVideoDC, text, static_cast<int>(_tcslen(text)), &size);
     size.cy = tm.tmAscent;
     return size;
+}
+
+
+int sys::screen::SetRect(RECT* prect, COLORREF cr)
+{
+    HBRUSH hBrush = CreateSolidBrush(cr);
+    int ret = FillRect(hVideoDC, prect, hBrush);
+    //     FrameRect(output.Get_DC(), &rect, hBrush);
+    DeleteObject(hBrush);
+    return ret;
 }
 
 // ------------------------------------------------------------------

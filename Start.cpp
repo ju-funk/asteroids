@@ -68,28 +68,49 @@ void StartRenderView(coreInfo& core)
     }
 }
 
-inline bool StartHandleInput()
+inline bool StartHandleInput(int &state)
 {
     int wheel;
     POINT mousePos;
 
-    if (output.GetInputState(mousePos, wheel))
+
+    if ((state & ~1) == 4)
     {
-        if(keys.GetKeyState(VK_LBUTTON, KeyMan::MustToggle))
+        if (keys.GetKeyState(VK_F4, KeyMan::MustToggle))
+            state = 2;
+
+        if (keys.GetKeyState(VK_ESCAPE, KeyMan::MustToggle))
+            state = 2;
+
+        if (output.GetInputState(mousePos, wheel))
+        {
+            if (keys.GetKeyState(VK_LBUTTON, KeyMan::MustToggle))
+                state = 2;
+        }
+    }
+    else
+    {
+        if (output.GetInputState(mousePos, wheel))
+        {
+            if (keys.GetKeyState(VK_LBUTTON, KeyMan::MustToggle))
+                return true;
+        }
+
+        if (keys.GetKeyState(VK_F2, KeyMan::MustToggle))
             return true;
-    }
 
-    if (keys.GetKeyState(VK_F2, KeyMan::MustToggle))
-        return true;
+        if (keys.GetKeyState(VK_F6, KeyMan::MustToggle))
+        {
+            output.GetTogMouse(true);
+            output.Sound(IDW_GETITE);
+        }
 
-    if (keys.GetKeyState(VK_F6, KeyMan::MustToggle))
-    {
-        output.GetTogMouse(true);
-        output.Sound(IDW_GETITE);
+        if (keys.GetKeyState(VK_F4, KeyMan::MustToggle))
+            state = 4;
+
+        if (keys.GetKeyState(VK_F5, KeyMan::MustToggle))
+            output.ToggScreen();
     }
- 
-    if (keys.GetKeyState(VK_F5, KeyMan::MustToggle))
-        PostMessage(output.GetWnd(), WM_USER + 1, 0, 0);
 
     return false;
 }
@@ -117,12 +138,157 @@ SIZE ShowText(const TCHAR* str, int x, int y, const TCHAR* Fn = nullptr, int siz
 }
 
 
+void ShowHiEntry(int x, int y, const TCHAR* pszFmt, ...)
+{
+    va_list ptr;
+    va_start(ptr, pszFmt);
+    TCHAR buf[300];
+    buf[0] = 0;
+    _vstprintf_s(buf, 300, pszFmt, ptr);
+    ShowText(buf, x, y);
+    va_end(ptr);
+}
+
+
+
+INT_PTR CALLBACK InputDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    static TCHAR *buf = nullptr;
+
+    switch (uMsg)
+    {
+    case WM_INITDIALOG:
+        buf = reinterpret_cast<TCHAR*>(lParam);
+        SetDlgItemText(hwndDlg, IDC_EDNAME, _T("Player"));
+        break;
+
+    case WM_COMMAND:
+        switch (LOWORD(wParam))
+        {
+        case IDOK:
+        {
+            if (buf != nullptr)
+            {
+                GetDlgItemText(hwndDlg, IDC_EDNAME, buf, coreInfo::HiScoreEntry::MaxName);
+
+                if (buf[0] != 0)
+                    EndDialog(hwndDlg, IDOK);
+            }
+            else
+                EndDialog(hwndDlg, IDOK);
+            return TRUE;
+        }
+        case IDCANCEL:
+            return TRUE;
+        }
+        break;
+
+    case WM_CLOSE:
+        return TRUE;
+    }
+    return FALSE;
+}
+
+int InsertHiSore(coreInfo& core)
+{
+    coreInfo::vtHiScIt it = std::find_if(core.vHiScore.begin(), core.vHiScore.end(), [&core] (coreInfo::HiScoreEntry& hs) {
+        return hs.Score < core.Score;
+       });
+
+    int idx = static_cast<int>(it - core.vHiScore.begin());
+    int len = static_cast<int>(core.vHiScore.size());
+
+    if (len < coreInfo::HiScoreEntry::MaxList && (idx <= -1))
+        idx = len;
+
+    if (idx > -1 && idx < coreInfo::HiScoreEntry::MaxList)
+    {
+        core.vHiScore.emplace(it, coreInfo::HiScoreEntry(core.Score));
+        if (core.vHiScore.size() > coreInfo::HiScoreEntry::MaxList)
+            core.vHiScore.pop_back();
+    }
+    else
+        idx = -1;
+
+    return idx;
+}
+
+
+
+void ShowHiScore(coreInfo& core, int HiIdx)
+{
+    SIZE si, size = ShowText(_T(" High Score "), core.iCWidth, 5, _T("Segoe Script"), 90, TA_CENTER, RGB(120, 30, 200), RGB(30, 100, 200), 3);
+    si = ShowText(_T(" F4 Back to Start screen "), core.iCWidth, 0, _T("Arial"), 22, TA_CENTER, RGB(32, 32, 32), RGB(30, 120, 120), 1, false);
+    si.cy += si.cy / 3;
+    int step, stay, endy = core.iHeight - si.cy * 2;
+    ShowText(_T(" Back to Start screen F4 / ESC or Left Mouse-Button"), core.iCWidth, core.iHeight - si.cy, _T("Arial"), 22, TA_CENTER, RGB(32, 32, 32), RGB(30, 120, 120), 1);
+
+    si = ShowText(_T(" Name "), core.iCWidth, 5, _T("Comic Sans MS"), 25, TA_CENTER, RGB(160, 0, 255), RGB(0, 0, 0), 1, false, TRANSPARENT);
+    si.cy += si.cy / 3;
+    size.cy += si.cy*2;
+    
+    if (core.Score > 0)
+        ShowHiEntry(core.iCWidth, size.cy, _T(" Your Score : %u"), core.Score);
+
+    size.cy += static_cast<long>(si.cy*2.5f);
+    stay = size.cy;
+
+    step = (endy - stay) / coreInfo::HiScoreEntry::MaxList;
+
+    if (HiIdx > -1)
+    {
+        int lin = stay + step * HiIdx - static_cast<int>(si.cy * 0.1f);
+        RECT rect = { 0, lin, core.iWidth, lin + static_cast<int>(si.cy * 1.18f)};
+
+        output.SetRect(&rect, RGB(64, 0, 0));
+    }
+
+    int len = static_cast<int>(core.vHiScore.size());
+
+    for (int i = 0; i < len; ++i)
+    {
+        TCHAR *txt = core.vHiScore[i].str;
+
+        if(i == 0)
+            ShowText(txt, 10, stay + step * i, _T("Comic Sans MS"), 25, TA_LEFT, RGB(0, 95, 255), RGB(0, 0, 0), 2, true, TRANSPARENT);
+        else
+            ShowText(txt, 10, stay + step * i);
+    }
+
+    for (int i = 0; i < len; ++i)
+    {
+        std::time_t now_c = std::chrono::system_clock::to_time_t(core.vHiScore[i].tipo);
+        std::tm local_tm;
+        localtime_s(&local_tm, &now_c);
+
+        if(i == 0)
+            ShowText(_T(" "), core.iCWidth, stay + step * i, _T("Comic Sans MS"), 25, TA_CENTER, RGB(0, 95, 255), RGB(0, 0, 0), 2, false, TRANSPARENT);
+        ShowHiEntry(core.iCWidth, stay + step * i, _T("%02d.%02d.%04d, %02d:%02d"), local_tm.tm_mday, local_tm.tm_mon + 1, local_tm.tm_year + 1900, local_tm.tm_hour, local_tm.tm_min);
+    }
+
+    for (int i = 0; i < len; ++i)
+    {
+        if(i == 0)
+            ShowText(_T(" "), core.iWidth - 10, stay + step * i, _T("Comic Sans MS"), 25, TA_RIGHT, RGB(0, 95, 255), RGB(0, 0, 0), 2, false, TRANSPARENT);
+        ShowHiEntry(core.iWidth - 10, stay + step * i, _T("%lu"), core.vHiScore[i].Score);
+    }
+
+    if ((HiIdx > -1) && core.vHiScore[HiIdx].IsNameNotSet())
+    {
+        output.flipBuffers();
+        output.ShowDlg(IDD_INPUT, InputDlgProc, reinterpret_cast<LPARAM>(core.vHiScore[HiIdx].str));
+
+        core.SaveHiScore();
+    }
+}
+
+
 
 void ViewText(coreInfo& core, float posx1, float posy1, float posx2, float step)
 {
     const TCHAR *tit = output.GetTitle();
 
-    SIZE si, size = ShowText(_T(" Astroids "), core.iCWidth, 0, _T("Segoe Script"), 120, TA_CENTER, RGB(120, 30, 200), RGB(30, 100, 200), 3);
+    SIZE si, size = ShowText(_T(" Astroids "), core.iCWidth, 5, _T("Segoe Script"), 120, TA_CENTER, RGB(120, 30, 200), RGB(30, 100, 200), 3);
     si = ShowText(tit, core.iCWidth, size.cy + 2, _T("Segoe Script"), 18, TA_CENTER, RGB(192, 192, 192), RGB(0, 0, 0), 1, false, TRANSPARENT);
     ShowText(tit, core.iCWidth + si.cx / 2, size.cy + 2);
     size.cy += si.cx / 3;
@@ -130,7 +296,7 @@ void ViewText(coreInfo& core, float posx1, float posy1, float posx2, float step)
     si.cy += si.cy / 3;
         
     TCHAR tbu1[50] = _T("Start with F2 or Left Mouse-Button"), tbu2[50];
-    TCHAR tbu3[80] = _T(" F3 Setup | F4 High Score | F5 switch to ");
+    TCHAR tbu3[80] = _T(" F3 Setup | F4 High Score | ESC Exit | F5 switch to ");
 
     if (output.GetFullScr())
     {
@@ -185,10 +351,15 @@ void ViewText(coreInfo& core, float posx1, float posy1, float posx2, float step)
 
 bool ShowStart(coreInfo& core)
 {
+    coreInfo coreSt, coreHS;
+
     astDeallocSprites(core);
+    astDeallocSprites(coreSt);
+    astDeallocSprites(coreHS);
 
     entity starfield(core.models.stars, 0.0f, 0.0f, entity::None);
-    core.sprites.push_back(starfield);
+    coreSt.sprites.push_back(starfield);
+    coreHS.sprites.push_back(starfield);
 
     float fac  = 7.0f;
     float posxm1, posx = -core.fSWidth + fac*2.0f;
@@ -198,53 +369,85 @@ bool ShowStart(coreInfo& core)
     posxm1 = posx + fac*0.75f;
 
     entity player(core.models.ship, posxm1, posy, entity::Ship);
-    core.sprites.push_back(player);
+    coreSt.sprites.push_back(player);
 
     entity splayer(core.models.shild, posx1, posy, entity::Shild);
-    core.sprites.push_back(splayer);
+    coreSt.sprites.push_back(splayer);
 
     posy += fac;
     entity bullet(core.models.misile, posx1 , posy, entity::Fire);
     bullet.setDir(1.2f);
-    core.sprites.push_back(bullet);
+    coreSt.sprites.push_back(bullet);
 
     entity as1(core.models.stroidBig, posx - fac * 0.11f, posy, entity::Astro);
     as1.setDir(1.3f);
-    core.sprites.push_back(as1);
+    coreSt.sprites.push_back(as1);
+    as1.pos.x =  posx + fac;
+    as1.pos.y =  posy - fac*3.8f;
+    coreHS.sprites.push_back(as1);
+    as1.pos.x =  -posx - fac;
+    as1.pos.y =  posy - fac*3.8f;
+    coreHS.sprites.push_back(as1);
 
     entity as2(core.models.stroidMed, posxm1, posy, entity::Astro);
     as2.setDir(1.5f);
-    core.sprites.push_back(as2);
+    coreSt.sprites.push_back(as2);
 
     entity as3(core.models.stroidTiny, posx + fac * 0.42f, posy + fac * 0.4f, entity::Astro);
     as3.setDir(1.7f);
-    core.sprites.push_back(as3);
+    coreSt.sprites.push_back(as3);
 
 
     posy += fac;
     posx += fac * 0.75f;
 
-    vertex w1(posx, posy);
-    astGenItems(core, entity::ItFire, w1, true);
-    vertex w2(posx1, posy);
-    astGenItems(core, entity::ItFireGun, w2, true);
+    entity it1(core.models.ItemFire, posx, posy, entity::ItFire);
+    it1.setDir(2.5f);
+    coreSt.sprites.push_back(it1);
+
+    entity it2(core.models.ItemFireGun, posx1, posy, entity::ItFireGun);
+    it2.setDir(2.0f);
+    coreSt.sprites.push_back(it2);
 
     posy += fac;
 
-    vertex w3(posx, posy);
-    astGenItems(core, entity::ItShild, w3, true);
+    entity it3(core.models.ItemShild, posx, posy, entity::ItShild);
+    it3.setDir(1.9f);
+    coreSt.sprites.push_back(it3);
     
-    vertex w4(posx1, posy);
-    astGenItems(core, entity::ItShip, w4, true);
+    entity it4(core.models.ItemShip, posx1, posy, entity::ItShip);
+    it4.setDir(1.9f);
+    coreSt.sprites.push_back(it4);
+
+    int idx, state = 2;
+    if (core.Score > 0)
+    {
+        core.Score += (core.Fires / 10) * 10;
+        state = 4;
+
+        idx = InsertHiSore(core);
+    }
+    else
+        idx = -1;
 
     while (!bHasTermSignal)
     {
-        if(StartHandleInput())
+        if(StartHandleInput(state))
             break;
+
+        if (state == 4)
+            core.sprites = coreHS.sprites;
+        else if (state == 2)
+            core.sprites = coreSt.sprites;
+
+        state |= 1;
 
         StartRenderView(core);
 
-        ViewText(core, posxm1, posys1, posx1, fac);
+        if ((state & ~1) == 4)
+            ShowHiScore(core, idx);
+        else 
+            ViewText(core, posxm1, posys1, posx1, fac);
 
         // blit frame and clear backbuffer
         output.flipBuffers();
@@ -253,7 +456,6 @@ bool ShowStart(coreInfo& core)
         // let other processes have cpu time
         Sleep(10);
     }
-
 
     astDeallocSprites(core);
     output.SetNewFont(_T("Arial"));

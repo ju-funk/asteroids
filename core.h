@@ -13,7 +13,6 @@ struct coreInfo
     int iWidth, iHeight;
     int iCWidth, iCHeight;
     int iSize;
-    HDC hDC;
 
     std::mutex mtx;
 
@@ -42,6 +41,59 @@ struct coreInfo
     TimerClass::tTimerVar  ShlTime, ShlTiDel, ItemTime;
     int Ships;
     bool FireGun;
+
+    struct HiScoreEntry
+    {
+        const static int MaxName = 30;
+        const static int MaxList = 10;
+
+        TCHAR str[MaxName] = {};
+        std::chrono::system_clock::time_point tipo;
+        DWORD Score;
+
+        DWORD SetName(const TCHAR* Na)
+        {
+            _tcscpy_s(str, Na);
+            return (static_cast<DWORD>(_tcslen(str)) + 1) * sizeof(TCHAR);
+        }
+
+        DWORD SetDat(BYTE* dat)
+        {
+            DWORD len = sizeof(tipo) + sizeof(Score);
+            memcpy(&tipo, dat, len);
+
+            return len;
+        }
+
+        void cpyDat(BYTE** dat)
+        {
+            size_t len = _tcslen(str) + 1;
+            _tcscpy_s(reinterpret_cast<TCHAR*>(*dat), len, str);
+            *dat += len * sizeof(TCHAR);
+
+            len = sizeof(tipo) + sizeof(Score);
+            memcpy(*dat, &tipo, len);
+            *dat += len;
+        }
+
+        HiScoreEntry(DWORD score, const TCHAR* Na = _T(""), std::chrono::system_clock::time_point ti = std::chrono::system_clock::now())
+        {
+            SetName(Na);
+            tipo = ti;
+            Score = score;
+        }
+
+        bool IsNameNotSet() const {return str[0] == 0;}
+    };
+
+    using vtHiSc = std::vector<HiScoreEntry>;
+    using vtHiScIt = vtHiSc::iterator;
+
+    vtHiSc vHiScore;
+
+    void LoadHiScore();
+    void SaveHiScore();
+
 };
 
 // prototypes called by core.cpp
