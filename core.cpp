@@ -150,6 +150,8 @@ int coreMainThread( )
 {
     // setup output parameters
     coreInfo core;
+    core.LoadHiScore();
+
     core.pBuffer = output.getScreenBuffer();
     core.iWidth = output.getWidth();
     core.iHeight = output.getHeight();
@@ -160,7 +162,6 @@ int coreMainThread( )
     core.fScaleX = core.fScaleY = 10.0f;
     core.fSWidth = core.iCWidth / core.fScaleX;
     core.fSHeight = core.iCHeight / core.fScaleY;
-    core.hDC    =  output.Get_DC();
 
     core.iGameLevel =
     core.Score =
@@ -295,4 +296,47 @@ bool coreBadAlloc( void )
     // notify user and end thread
     sys::userNotice( _T("Insufficient sys resources: Memory allocation failed."), true );
     return false;
+}
+
+
+void coreInfo::LoadHiScore()
+{
+    DWORD len, cnt = 0, si;
+    BYTE *dat = output.GetHiScPtr(len);
+
+    vHiScore.clear();
+
+    while (len > cnt)
+    {
+        HiScoreEntry enty(0);
+        si   = enty.SetName(reinterpret_cast<TCHAR*>(dat));
+        cnt += si;
+        dat += si;
+        si   = enty.SetDat(dat);
+        cnt += si;
+        dat += si;
+
+        vHiScore.push_back(enty);
+    }
+}
+
+void coreInfo::SaveHiScore()
+{
+    DWORD len = 0;
+    BYTE *dat;
+
+    std::for_each(vHiScore.begin(), vHiScore.end(), [&len](HiScoreEntry& ent) {
+        len += (static_cast<DWORD>(_tcslen(ent.str)) + 1) * sizeof(TCHAR) + sizeof(ent.tipo) + sizeof(ent.Score);
+    });
+
+    dat = new BYTE[len];
+
+    std::for_each(vHiScore.begin(), vHiScore.end(), [dat](HiScoreEntry& ent) {
+        ent.cpyDat(const_cast<BYTE**>(&dat));
+    });
+
+
+    output.SetNewHiScr(dat, len);
+
+    delete [] dat;
 }

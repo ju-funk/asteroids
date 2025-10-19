@@ -318,7 +318,8 @@ void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where, bool start
     Item.setDir(posrad);
 
     core.sprites.push_back(Item);
-    output.Sound(IDW_START);
+    if(!start)
+        output.Sound(IDW_START);
 }
 
 

@@ -39,10 +39,9 @@ namespace sys
 class sys::screen
 {
 public:
-    screen() {};
+    screen();
+    ~screen();
     bool Create(int width, int height, const TCHAR* szCaption);
-
-    ~screen(void) { cleanup(); }
     void cleanup(void);
 
     // display setup functions
@@ -59,15 +58,17 @@ public:
     int getWidth(void) { return iWidth; }
     int getHeight(void) { return iHeight; }
 
-    inline HDC Get_DC() { return hVideoDC; }
     inline const TCHAR* GetTitle() { return pcTitle; }
-    inline HWND GetWnd() {return hWnd;}
+    void ToggScreen() { PostMessage(hWnd, WM_USER + 1, 0, 0); }
     inline bool GetFullScr() {return hasFullScreen;}
-    bool GetTogMouse(bool ena = false)
-    {
+    bool GetTogMouse(bool ena = false) {
         if(ena)
             EnaMouse = !EnaMouse;
         return EnaMouse;
+    }
+
+    inline INT_PTR ShowDlg(int Idd, DLGPROC DlgProcfnc, LPARAM dwInitParam) {
+        return DialogBoxParam(hInstance, MAKEINTRESOURCE(Idd), hWnd, DlgProcfnc, dwInitParam);
     }
 
     bool GetInputState(POINT& mousePos, int& wheel);
@@ -84,7 +85,11 @@ public:
     }
 
     SIZE GetTextSize(const TCHAR* text);
+    int SetRect(RECT* prect, COLORREF cr);
 
+
+    BYTE *GetHiScPtr(DWORD &len);
+    void SetNewHiScr(BYTE *dat, DWORD len);
 
 
 
@@ -105,6 +110,7 @@ private:
     int StWheel = 0;
     bool EnaMouse = true;
     bool msgLoop = false;
+    bool EscDis = false;
 
     // window members
     HINSTANCE hInstance = nullptr;
@@ -133,7 +139,28 @@ private:
     DEVMODE dmOriginalConfig = {};
     LONG_PTR windowStyle = 0;
 
+
+    struct _setup
+    {
+        DWORD  ExaSize;
+        DWORD32 crc;
+        int MKeys[5];
+        int KKeys[5];
+
+        BYTE HiSoSta;
+    };
+
+    std::unique_ptr<BYTE[]> usetup;
+    _setup *setup;
+    const TCHAR SetName[14] = { _T('a'), _T('s'), _T('t'), _T('e'), _T('r'), _T('o'), _T('i'), _T('d'), _T('s'), _T('.'), _T('d'), _T('a'), _T('t')};
+    const int _setupLen = sizeof(_setup) - sizeof(int);   // not count BYTE HiSoSta it is only a placeholder, compiler set as int
+    void LoadSetup();
+    void SaveSetup();
+
+
+    /////////////////
     // waves  stuff
+    ////////////////
     const WORD StartHeader = 20;
     const WORD WaveStartData = StartHeader + 24;
    
