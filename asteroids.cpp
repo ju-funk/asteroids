@@ -54,6 +54,18 @@ inline void astHandleInput( coreInfo &core )
     if(keys.GetKeyState(VK_RIGHT, KeyMan::IsDown))
         spaceship->rz += 0.04f;
 
+    if (keys.GetKeyState('S', KeyMan::MustToggle))
+            astShipShild(core, true);
+
+    if (keys.GetKeyState(VK_ESCAPE, KeyMan::MustToggle))
+    {
+        entity* ship = core.GetShip();
+        ship->health = 0;
+        ship->scale  = 5.1f;
+        core.Ships = 0;
+        core.Score = 0;
+    }
+
 //    if(keys.GetKeyState(VK_END, KeyMan::MustToggle))
 //        spaceship->pos.g = spaceship->pos.r = 0.0f;
 }
