@@ -217,6 +217,8 @@ int InsertHiSore(coreInfo& core)
 
 void ShowHiScore(coreInfo& core, int HiIdx)
 {
+    output.GetSetEscDis(true);
+
     SIZE si, size = ShowText(_T(" High Score "), core.iCWidth, 5, _T("Segoe Script"), 90, TA_CENTER, RGB(120, 30, 200), RGB(30, 100, 200), 3);
     si = ShowText(_T(" F4 Back to Start screen "), core.iCWidth, 0, _T("Arial"), 22, TA_CENTER, RGB(32, 32, 32), RGB(30, 120, 120), 1, false);
     si.cy += si.cy / 3;
@@ -287,6 +289,8 @@ void ShowHiScore(coreInfo& core, int HiIdx)
 void ViewText(coreInfo& core, float posx1, float posy1, float posx2, float step)
 {
     const TCHAR *tit = output.GetTitle();
+
+    output.GetSetEscDis(false);
 
     SIZE si, size = ShowText(_T(" Astroids "), core.iCWidth, 5, _T("Segoe Script"), 120, TA_CENTER, RGB(120, 30, 200), RGB(30, 100, 200), 3);
     si = ShowText(tit, core.iCWidth, size.cy + 2, _T("Segoe Script"), 18, TA_CENTER, RGB(192, 192, 192), RGB(0, 0, 0), 1, false, TRANSPARENT);
@@ -459,6 +463,8 @@ bool ShowStart(coreInfo& core)
 
     astDeallocSprites(core);
     output.SetNewFont(_T("Arial"));
+
+    output.GetSetEscDis(true);
 
     return !bHasTermSignal;
 }

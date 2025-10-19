@@ -234,7 +234,7 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
         break;
 
     case WM_KEYDOWN:
-        if ( wParam != VK_ESCAPE )
+        if ( (wParam != VK_ESCAPE) || output.GetSetEscDis())
             break;
         // handle escape key as close event
 

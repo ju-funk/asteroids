@@ -52,6 +52,13 @@ public:
     bool doEvents(void);
     void signalQuit(void) { PostMessage(hWnd, WM_CLOSE, (WPARAM)this, 0); }
 
+    inline bool GetSetEscDis(int i = 2) {
+           if(i < 2)
+               EscDis = static_cast<bool>(i);
+               
+           return EscDis;
+    }
+
     // private accessors
     int getExitCode(void) { return iExitCode; }
     unsigned long* getScreenBuffer(void) { return pBitmap; }
