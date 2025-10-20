@@ -154,12 +154,16 @@ void ShowHiEntry(int x, int y, const TCHAR* pszFmt, ...)
 INT_PTR CALLBACK InputDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     static TCHAR *buf = nullptr;
+    HWND hEdit;
 
     switch (uMsg)
     {
     case WM_INITDIALOG:
         buf = reinterpret_cast<TCHAR*>(lParam);
         SetDlgItemText(hwndDlg, IDC_EDNAME, _T("Player"));
+        hEdit = GetDlgItem(hwndDlg, IDC_EDNAME);
+        SetFocus(hEdit);
+        SendMessage(hEdit, EM_SETSEL, 0, -1);
         break;
 
     case WM_COMMAND:
@@ -223,7 +227,7 @@ void ShowHiScore(coreInfo& core, int HiIdx)
     si = ShowText(_T(" F4 Back to Start screen "), core.iCWidth, 0, _T("Arial"), 22, TA_CENTER, RGB(32, 32, 32), RGB(30, 120, 120), 1, false);
     si.cy += si.cy / 3;
     int step, stay, endy = core.iHeight - si.cy * 2;
-    ShowText(_T(" Back to Start screen F4 / ESC or Left Mouse-Button"), core.iCWidth, core.iHeight - si.cy, _T("Arial"), 22, TA_CENTER, RGB(32, 32, 32), RGB(30, 120, 120), 1);
+    ShowText(_T(" Back to Start screen with F4 or ESC or Left Mouse-Button"), core.iCWidth, core.iHeight - si.cy, _T("Arial"), 22, TA_CENTER, RGB(32, 32, 32), RGB(30, 120, 120), 1);
 
     si = ShowText(_T(" Name "), core.iCWidth, 5, _T("Comic Sans MS"), 25, TA_CENTER, RGB(160, 0, 255), RGB(0, 0, 0), 1, false, TRANSPARENT);
     si.cy += si.cy / 3;
