@@ -14,7 +14,8 @@
 #define IDW_FIRWAR                      108
 #define IDW_GETITE                      109
 #define IDW_GENITE                      110
-#define IDW_ENDWAV                      111
+#define IDW_STARTS                      111
+#define IDW_ENDWAV                      112
 
 #define IPP_ICON                        200
 

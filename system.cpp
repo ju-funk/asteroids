@@ -714,7 +714,7 @@ KeyMan::kdat& KeyMan::GetKDat(int Key, int extkey)
 /////////////////////////////////////////////////////////////////////
 
 
-sys::screen::mpbtSnd sys::screen::OpenWave(stSound* Snd)
+sys::screen::mpbtSnd sys::screen::OpenWave(stSound* Snd, bool loop)
 {
     size_t i = Snd->key++;
 
@@ -734,9 +734,12 @@ sys::screen::mpbtSnd sys::screen::OpenWave(stSound* Snd)
     {
         itsnd.first->second.waveHdr.lpData = reinterpret_cast<LPSTR>(Snd->buffer);
         itsnd.first->second.waveHdr.dwBufferLength = Snd->size;
-        itsnd.first->second.waveHdr.dwFlags = 0;
-        itsnd.first->second.waveHdr.dwLoops = 0;
-        itsnd.first->second.waveHdr.dwFlags = 0;
+        itsnd.first->second.waveHdr.dwBytesRecorded = 0;
+        itsnd.first->second.waveHdr.dwUser  = 0;
+        itsnd.first->second.waveHdr.dwFlags = loop ? (WHDR_BEGINLOOP | WHDR_ENDLOOP) : 0;
+        itsnd.first->second.waveHdr.dwLoops = loop ? MAXDWORD : 0;
+        itsnd.first->second.waveHdr.lpNext  = nullptr;
+        itsnd.first->second.waveHdr.reserved = 0;
         waveOutPrepareHeader(itsnd.first->second.hWaveOut, &itsnd.first->second.waveHdr, sizeof(WAVEHDR));
     }
 
@@ -744,37 +747,41 @@ sys::screen::mpbtSnd sys::screen::OpenWave(stSound* Snd)
 }
 
 
-void sys::screen::Sound(WORD id)
+void sys::screen::Sound(WORD id, bool stop)
 {
     stSound* Snd = &pWaves[id - IDW_OFFSET];
 
-    mpbtSnd it(std::find_if(Snd->vSound.begin(), Snd->vSound.end(), [](auto& snd) {return (snd.second.prepared & vtSound::Mask) == vtSound::Use; }), true);
-    it.second = it.first != Snd->vSound.end();
-
-    if (it.second && (Snd->key < Snd->max_key))
-        it = OpenWave(Snd);
-
-    if (it.second)
+    if (!stop)
     {
-        // DebugOut(_T("Sound              stSP : %p, vtSP : %p, Key : %03i, Id  : %03i\n"), Snd, it.first->second, it.first->second.Idx, id - IDW_OFFSET);
-        it.first->second |= vtSound::FreeInUse;
-        waveOutWrite(it.first->second.hWaveOut, &it.first->second.waveHdr, sizeof(WAVEHDR));
-    }
-    //else
-       // DebugOut(_T("NO Sound\n"));
+        mpbtSnd it(std::find_if(Snd->vSound.begin(), Snd->vSound.end(), [](auto& snd) {return (snd.second.prepared & vtSound::Mask) == vtSound::Use; }), true);
+        it.second = it.first != Snd->vSound.end();
 
-    // close too many sound handles
-    for (mtSndIt its = Snd->vSound.begin(); its != Snd->vSound.end(); )
-    {
-        if ((its->second.prepared & vtSound::Use) == vtSound::Del)
+        if (it.second && (Snd->key < Snd->max_key))
+            it = OpenWave(Snd);
+
+        if (it.second)
         {
-            CloseWave(its->second);
-            its = Snd->vSound.erase(its);
+            // DebugOut(_T("Sound              stSP : %p, vtSP : %p, Key : %03i, Id  : %03i\n"), Snd, it.first->second, it.first->second.Idx, id - IDW_OFFSET);
+            it.first->second |= vtSound::FreeInUse;
+            waveOutWrite(it.first->second.hWaveOut, &it.first->second.waveHdr, sizeof(WAVEHDR));
         }
-        else
-            ++its;
-    }
+        //else
+           // DebugOut(_T("NO Sound\n"));
 
+        // close too many sound handles
+        for (mtSndIt its = Snd->vSound.begin(); its != Snd->vSound.end(); )
+        {
+            if ((its->second.prepared & vtSound::Use) == vtSound::Del)
+            {
+                CloseWave(its->second);
+                its = Snd->vSound.erase(its);
+            }
+            else
+                ++its;
+        }
+    }
+    else
+        CloseWave(Snd->vSound.begin()->second, true);
 }
 
 
@@ -789,7 +796,7 @@ void CALLBACK sys::screen::WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInst
         break;
     case WOM_DONE:
         vtSound* sound = reinterpret_cast<vtSound*>(dwInstance);
-        if (sound->Idx > 5)   // close sound handles when over
+        if (sound->Idx > output.MaxWaveStreams)   // close sound handles when over
             sound->prepared = vtSound::Del;
         else
             *sound &= vtSound::FreeInUse;
@@ -813,6 +820,7 @@ bool sys::screen::LoadWaves()
             {
                 snd->buffer = reinterpret_cast<BYTE*>(LockResource(hData));
                 memcpy(reinterpret_cast<BYTE*>(&snd->wfx), snd->buffer + StartHeader, sizeof(WAVEFORMATEX));
+                snd->wfx.cbSize = 0;
 
                 auto it = std::search(snd->buffer, snd->buffer + snd->size, dataId, dataId + 4);
                 if (it != snd->buffer + snd->size)
@@ -831,11 +839,16 @@ bool sys::screen::LoadWaves()
         return false;
     };
 
+    bool loop;
+
     for (WORD i = IDW_START; i < IDW_ENDWAV; ++i)
     {
         stSound* Snd = &pWaves[i - IDW_OFFSET];
+        loop = false;
         switch (i)
         {
+        case IDW_STARTS:
+            loop = true;
         case IDW_START:
         case IDW_LEVEL:
         case IDW_SHIPEX:
@@ -845,7 +858,7 @@ bool sys::screen::LoadWaves()
         case IDW_COLAST:
         case IDW_ASTHIT:
         case IDW_ASTEXP:
-            Snd->max_key = 5;
+            Snd->max_key = output.MaxWaveStreams;
             break;
 
         case IDW_FIRESH:
@@ -863,7 +876,7 @@ bool sys::screen::LoadWaves()
             return false;
         }
 
-        mpbtSnd it = OpenWave(Snd);
+        mpbtSnd it = OpenWave(Snd, loop);
 
         if (!it.second)
             return false;
@@ -873,11 +886,14 @@ bool sys::screen::LoadWaves()
 }
 
 
-void sys::screen::CloseWave(vtSound& vsnd)
+void sys::screen::CloseWave(vtSound& vsnd, bool stop)
 {
     waveOutUnprepareHeader(vsnd.hWaveOut, &vsnd.waveHdr, sizeof(WAVEHDR));
     waveOutReset(vsnd.hWaveOut);
-    waveOutClose(vsnd.hWaveOut);
+    if(!stop)
+        waveOutClose(vsnd.hWaveOut);
+    else
+        vsnd &= vtSound::FreeInUse;
 }
 
 

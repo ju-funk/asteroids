@@ -56,6 +56,7 @@
     <Media Include="waves\ShipEx.wav" />
     <Media Include="waves\Shipexpl.wav" />
     <Media Include="waves\Start.wav" />
+    <Media Include="waves\StartSc.wav" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="asteroids.ico" />

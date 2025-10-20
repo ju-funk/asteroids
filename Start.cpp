@@ -361,6 +361,8 @@ bool ShowStart(coreInfo& core)
 {
     coreInfo coreSt, coreHS;
 
+    output.Sound(IDW_STARTS);
+
     astDeallocSprites(core);
     astDeallocSprites(coreSt);
     astDeallocSprites(coreHS);
@@ -469,6 +471,8 @@ bool ShowStart(coreInfo& core)
     output.SetNewFont(_T("Arial"));
 
     output.GetSetEscDis(true);
+
+    output.Sound(IDW_STARTS, true);
 
     return !bHasTermSignal;
 }
