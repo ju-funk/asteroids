@@ -110,6 +110,9 @@
     <Media Include="waves\ShipEx.wav">
       <Filter>Waves</Filter>
     </Media>
+    <Media Include="waves\StartSc.wav">
+      <Filter>Waves</Filter>
+    </Media>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="asteroids.rc">

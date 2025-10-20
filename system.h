@@ -83,7 +83,7 @@ public:
     inline bool IsActiv() { return hWnd == GetForegroundWindow(); }
 
 
-    void Sound(WORD id);
+    void Sound(WORD id, bool stop = false);
 
 
     void SetNewFont(const TCHAR* Fn, int Size = 24, int Ta = TA_CENTER, int Bm = TRANSPARENT, int cF = 0, COLORREF ClTx = RGB(255, 255, 0), COLORREF ClBa = RGB(0, 0, 0));
@@ -103,8 +103,6 @@ public:
 private:
     // main init function
     bool create();
-    bool LoadWaves();
-    void CleanWave();
     void setVisible(bool state);
 
     // fullscreen helper
@@ -170,6 +168,7 @@ private:
     ////////////////
     const WORD StartHeader = 20;
     const WORD WaveStartData = StartHeader + 24;
+    const int  MaxWaveStreams = 5;
    
     struct vtSound
     {
@@ -201,9 +200,12 @@ private:
         mtSnd vSound;
     };
 
+    bool LoadWaves();
+    void CleanWave();
+
     static void CALLBACK WaveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
-    mpbtSnd OpenWave(stSound *Snd);
-    void CloseWave(vtSound& vsnd);
+    mpbtSnd OpenWave(stSound *Snd, bool loop = false);
+    void CloseWave(vtSound& vsnd, bool stop = false);
 
     stSound pWaves[IDW_ENDWAV - IDW_OFFSET];
 };
