@@ -245,20 +245,21 @@ int coreLoaderThread( coreInfo &core )
     colour.SetColor(0.5f, 0.3f, 0.3f);
     models.stroidBig.Sets(gfxGenAsteroid(plist, scale, 20.0f, colour), scale);
 
-    scale = 2.5f;
-    colour.SetColor(0.0f, 1.0f, 0.0f);
+    // make Items
+    scale = 2.57f;
+    colour.SetColor(0.3f, 0.0f, 0.0f);
     models.ItemFire.Sets(gfxGenItemFire(plist, scale, 0.08f, colour), scale);
 
-    scale = 2.5f;
-    colour.SetColor(0.0f, 1.0f, 0.0f);
+    scale = 2.57f;
+    colour.SetColor(1.0f, 1.0f, 0.0f);
     models.ItemShild.Sets(gfxGenItemShild(plist, scale, 0.08f, colour), scale);
 
-    scale = 2.5f;
-    colour.SetColor(0.0f, 1.0f, 0.0f);
+    scale = 2.57f;
+    colour.SetColor(1.0f, 0.0f, 1.0f);
     models.ItemShip.Sets(gfxGenItemShip(plist, scale, 0.08f, colour), scale);
 
-    scale = 2.5f;
-    colour.SetColor(0.0f, 1.0f, 0.0f);
+    scale = 2.57f;
+    colour.SetColor(0.3f, 0.0f, 0.0f);
     models.ItemFireGun.Sets(gfxGenItemFireGun(plist, scale, 0.08f, colour), scale);
 
     // all models generated, convert to linear array

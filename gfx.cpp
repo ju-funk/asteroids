@@ -117,24 +117,24 @@ size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, ver
     return output.size() - start;
 }
 
-void gfxGenItem(array::list<vertex>& output, float len, float detail, vertex& col)
+void gfxGenItem(array::list<vertex>& output, float len, float detail, vertex& colour)
 {
     float x1 = -len / 2.0f;
     float y1 = x1;
 
     for (float i = 0.0f; i <= len; i += detail)
     {
-        col.x = x1 + i;
-        col.y = y1;
-        output.push_back(col);
-        col.y = -y1;
-        output.push_back(col);
+        colour.x = x1 + i;
+        colour.y = y1;
+        output.push_back(colour);
+        colour.y = -y1;
+        output.push_back(colour);
 
-        col.x = x1;
-        col.y = y1 + i;
-        output.push_back(col);
-        col.x = -x1;
-        output.push_back(col);
+        colour.x = x1;
+        colour.y = y1 + i;
+        output.push_back(colour);
+        colour.x = -x1;
+        output.push_back(colour);
     }
 }
 
@@ -143,10 +143,11 @@ size_t gfxGenItemFire(array::list<vertex>& output, float len, float detail, vert
 {
     size_t start = output.size();
 
-    gfxGenItem(output, len, detail, colour);
+    vertex colI;
+    colI.SetColor(0.0f, 1.0f, 0.0f);
+    gfxGenItem(output, len, detail, colI);
 
     len = 0.4f;
-    colour.SetColor(0.3f, 0.0f, 0.0f);
     gfxGenAsteroid(output, len, 4.0f, colour);
 
     return output.size() - start;
@@ -156,10 +157,11 @@ size_t gfxGenItemFireGun(array::list<vertex>& output, float len, float detail, v
 {
     size_t start = output.size();
 
-    gfxGenItem(output, len, detail, colour);
+    vertex colI;
+    colI.SetColor(0.0f, 1.0f, 0.0f);
+    gfxGenItem(output, len, detail, colI);
 
     len = 0.3f;
-    colour.SetColor(0.3f, 0.0f, 0.0f);
     colour.x = 0.5f;
     colour.y = 0.5f;
     gfxGenAsteroid(output, len, 3.0f, colour);
@@ -177,13 +179,13 @@ size_t gfxGenItemShild(array::list<vertex>& output, float len, float detail, ver
     size_t start = output.size();
 
     vertex col;
-    gfxGenItem(output, len, detail, colour);
+    col.SetColor(0.0f, 1.0f, 0.0f);
+    gfxGenItem(output, len, detail, col);
 
-    colour.SetColor(-1.0f, 0.0f, 0.0f);
-    col.SetColor(1.0f, 1.0f, 0.0f);
+    col.SetColor(-1.0f, 0.0f, 0.0f);
 
-    len = (len / 2) - 1.0f;
-    gfxGenShip(output, len, 0.08f, colour, col);
+    len /= 5.0f;
+    gfxGenShip(output, len, 0.08f, col, colour);
 
     return output.size() - start;
 }
@@ -193,12 +195,12 @@ size_t gfxGenItemShip(array::list<vertex>& output, float len, float detail, vert
     size_t start = output.size();
 
     vertex col;
-    gfxGenItem(output, len, detail, colour);
+    col.SetColor(0.0f, 1.0f, 0.0f);
+    gfxGenItem(output, len, detail, col);
 
-    colour.SetColor(1.0f, 0.0f, 1.0f);
     col.SetColor(-1.0f, 0.0f, 0.0f);
 
-    len = (len / 2);
+    len /= 3.0f;
     gfxGenShip(output, len, 0.08f, colour, col);
 
     return output.size() - start;
