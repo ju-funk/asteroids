@@ -3,7 +3,14 @@
 
 
 
-const entity::TypesEnty entity::Items[entity::MaxItems + 1] = { entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::ItFire, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::ItShild, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::ItShip, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::Zero, entity::ItFireGun, entity::Zero };
+const entity::TypesEnty entity::Items[entity::MaxItems + 1] = { 
+    entity::Zero      , entity::Zero, entity::Zero, entity::Zero, entity::Zero,
+    entity::ItFire    , entity::Zero, entity::Zero, entity::Zero, entity::Zero,
+    entity::ItShild   , entity::Zero, entity::Zero, entity::Zero, entity::Zero,
+    entity::ItShip    , entity::Zero, entity::Zero, entity::Zero, entity::Zero,
+    entity::ItFireGun , entity::Zero, entity::Zero, entity::Zero, entity::Zero,
+    entity::ItShipStop, entity::Zero, entity::Zero, entity::Zero, entity::Zero
+};
 
 
 inline void astHandleInput( coreInfo &core )
@@ -29,8 +36,8 @@ inline void astHandleInput( coreInfo &core )
         if(keys.GetKeyState(VK_LBUTTON, core.FireGun ? 30 : KeyMan::MustToggle))  // 19 ==> typeRate, ideal 30
            astFireBullet(core);
 
-        //if(keys.GetKeyState(VK_MBUTTON, KeyMan::MustToggle))
-        //    spaceship->pos.g = spaceship->pos.r = 0.0f;
+        if(keys.GetKeyState(VK_MBUTTON, KeyMan::MustToggle) && core.ShipStop)
+            spaceship->pos.g = spaceship->pos.r = 0.0f;
 
         if(keys.GetKeyState(VK_RBUTTON, KeyMan::MustToggle)) 
             astShipShild(core, true);
@@ -66,8 +73,8 @@ inline void astHandleInput( coreInfo &core )
         core.Score = 0;
     }
 
-//    if(keys.GetKeyState(VK_END, KeyMan::MustToggle))
-//        spaceship->pos.g = spaceship->pos.r = 0.0f;
+    if(keys.GetKeyState(VK_END, KeyMan::MustToggle) && core.ShipStop)
+        spaceship->pos.g = spaceship->pos.r = 0.0f;
 }
 
 
@@ -124,14 +131,19 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
         case entity::Astro | entity::ItShild:
         case entity::Astro | entity::ItShip:
         case entity::Astro | entity::ItFireGun:
+        case entity::Astro | entity::ItShipStop:
 
         case entity::ItFire | entity::ItShild:
         case entity::ItFire | entity::ItShip:
+        case entity::ItFire | entity::ItShipStop:
         case entity::ItShild | entity::ItShip:
+        case entity::ItShild | entity::ItShipStop:
+        case entity::ItShip  | entity::ItShipStop:
 
         case entity::ItFireGun | entity::ItFire:
         case entity::ItFireGun | entity::ItShip:
         case entity::ItFireGun | entity::ItShild:
+        case entity::ItFireGun | entity::ItShipStop:
             // two asteroids collide, switch direction vectors
             enta->swapAstDir(entb, maxdist - dist);
             output.Sound(IDW_COLAST);
@@ -161,6 +173,7 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
         case entity::Fire | entity::ItShild:
         case entity::Fire | entity::ItShip:
         case entity::Fire | entity::ItFireGun:
+        case entity::Fire | entity::ItShipStop:
             enta->setExplore();
             entb->setExplore();
             output.Sound(IDW_ASTEXP);
@@ -170,6 +183,7 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
         case entity::Shild | entity::ItFire:
         case entity::Shild | entity::ItShip:
         case entity::Shild | entity::ItFireGun:
+        case entity::Shild | entity::ItShipStop:
             entb->setExplore(true);
             output.Sound(IDW_ASTEXP);
             break;
@@ -205,6 +219,13 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
             entb->setExplore(true);
             output.Sound(IDW_GETITE);
             ++core.Ships;
+            core.Score += 100;
+            break;
+
+        case entity::Ship | entity::ItShipStop:
+            entb->setExplore(true);
+            output.Sound(IDW_GETITE);
+            core.ShipStop = true;
             core.Score += 100;
             break;
       }
@@ -295,7 +316,7 @@ inline entity::TypesEnty Itrand(void)
 
 
 
-void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where, bool start)
+void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where)
 {
     int fac = core.iGameLevel - 2;
     float posrad = M_2PI * frand();
@@ -316,22 +337,21 @@ void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where, bool start
     case entity::ItFireGun:
         newType = core.models.ItemFireGun;
         break;
+    case entity::ItShipStop:
+        newType = core.models.ItemShipStop;
+        break;
     default:
         return;
     }
 
     entity Item(newType, where.x, where.y, ty);
     Item.health = 1;
-    if(start)
-        Item.speed = 0.0;
-    else
-        Item.speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
+    Item.speed = 0.1f + (0.2f + (fac * 0.1f)) * frand();
     Item.liveTime = static_cast<DWORD>(200 / Item.speed) + 1;
     Item.setDir(posrad);
 
     core.sprites.push_back(Item);
-    if(!start)
-        output.Sound(IDW_START);
+    output.Sound(IDW_GENITE);
 }
 
 
@@ -488,7 +508,7 @@ void astNewGame( coreInfo &core, bool newgame )
     secTimer.StopTimer();
     core.ShlTime = core.cShlTime;
     core.ShlTiDel = core.cShlTiDel;
-    core.FireGun = false;
+    core.FireGun = core.ShipStop = false;
 
 
     if (restart)
@@ -559,7 +579,7 @@ void astNewGame( coreInfo &core, bool newgame )
     astGenItems(core, entity::ItShip, w3);
 
     vertex w4(5.0f, -5.0f);
-    astGenItems(core, entity::ItFireGun, w4);
+    astGenItems(core, entity::ItShipStop, w4);
     */
 }
 

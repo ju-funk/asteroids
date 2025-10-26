@@ -88,5 +88,6 @@ size_t gfxGenStars( array::list<vertex> &output, coreInfo& core);
 size_t gfxGenItemFire(array::list<vertex>& output, float len, float detail, vertex& colour);
 size_t gfxGenItemShild(array::list<vertex>& output, float len, float detail, vertex& colour);
 size_t gfxGenItemShip(array::list<vertex>& output, float len, float detail, vertex& colour);
+size_t gfxGenItemShipStop(array::list<vertex>& output, float len, float detail, vertex& colour);
 size_t gfxGenItemFireGun(array::list<vertex>& output, float len, float detail, vertex& colour);
 

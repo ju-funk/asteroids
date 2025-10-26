@@ -206,6 +206,52 @@ size_t gfxGenItemShip(array::list<vertex>& output, float len, float detail, vert
     return output.size() - start;
 }
 
+size_t gfxGenItemShipStop(array::list<vertex>& output, float len, float detail, vertex& colour)
+{
+    size_t start = output.size();
+
+    vertex colI;
+    colI.SetColor(0.0f, 1.0f, 0.0f);
+    gfxGenItem(output, len, detail, colI);
+
+    float x1 = -len / 2.0f;
+    float y1 = len / 4.0f;
+
+    for (float i = 0.0f; i <= y1; i += detail)
+    {
+        colour.x = x1 + i;
+        colour.y = 0;
+        output.push_back(colour);
+        colour.x = -colour.x;
+        output.push_back(colour);
+  
+        colour.x = 0;
+        colour.y = x1 + i;
+        output.push_back(colour);
+        colour.y = -colour.y;
+        output.push_back(colour);
+    }
+
+    x1 = -len / 4.0f;
+    y1 = x1;
+    len /= 3.0f;
+    for (float i = len / 1.50f; i <= len; i += detail)
+    {
+        colour.x = x1 + i;
+        colour.y = y1;
+        output.push_back(colour);
+        colour.y = -y1;
+        output.push_back(colour);
+  
+        colour.x = x1;
+        colour.y = y1 + i;
+        output.push_back(colour);
+        colour.x = -x1;
+        output.push_back(colour);
+    }
+
+    return output.size() - start;
+}
 
 size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour )
 {
