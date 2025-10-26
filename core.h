@@ -31,7 +31,7 @@ struct coreInfo
     {
         model stars, ship, shild, misile;
         model stroidTiny, stroidMed, stroidBig;
-        model ItemFire, ItemShild, ItemShip, ItemFireGun;
+        model ItemFire, ItemShild, ItemShip, ItemFireGun, ItemShipStop;
     } models;
 
     // other game specific vars
@@ -40,7 +40,7 @@ struct coreInfo
     const DWORD cShlTime = 3, cShlTiDel = 10;
     TimerClass::tTimerVar  ShlTime, ShlTiDel, ItemTime;
     int Ships;
-    bool FireGun;
+    bool FireGun, ShipStop;
 
     struct HiScoreEntry
     {

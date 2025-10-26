@@ -169,7 +169,7 @@ int coreMainThread( )
     core.Ships = 0;
     core.ShlTime = core.cShlTime;
     core.ShlTiDel = core.cShlTiDel;
-    core.FireGun = false;
+    core.FireGun = core.ShipStop = false;
 
 
     // check if load succeeded
@@ -262,6 +262,10 @@ int coreLoaderThread( coreInfo &core )
     colour.SetColor(0.3f, 0.0f, 0.0f);
     models.ItemFireGun.Sets(gfxGenItemFireGun(plist, scale, 0.08f, colour), scale);
 
+    scale = 2.57f;
+    colour.SetColor(0.7f, 0.1f, 0.1f);
+    models.ItemShipStop.Sets(gfxGenItemShipStop(plist, scale, 0.08f, colour), scale);
+
     // all models generated, convert to linear array
     if(!core.points.init(plist))
         return coreBadAlloc();
@@ -285,6 +289,7 @@ int coreLoaderThread( coreInfo &core )
     models.ItemShild.Copy(models.ItemFire.pEnd);
     models.ItemShip.Copy(models.ItemShild.pEnd);
     models.ItemFireGun.Copy(models.ItemShip.pEnd);
+    models.ItemShipStop.Copy(models.ItemFireGun.pEnd);
 
     // all done, initialize game
     astNewGame( core, true);

@@ -352,6 +352,8 @@ void ViewText(coreInfo& core, float posx1, float posy1, float posx2, float step)
     posy1 += step;
     ShowText(_T("Bonus shild (30 sec)"), Xy(posx1), Xy(posy1, false));
     ShowText(_T("Extra Life"), Xy(posx2), Xy(posy1, false));
+    posy1 += step;
+    ShowText(_T("You can Stop ship"), Xy(posx1), Xy(posy1, false));
 }
 
 
@@ -428,6 +430,12 @@ bool ShowStart(coreInfo& core)
     entity it4(core.models.ItemShip, posx1, posy, entity::ItShip);
     it4.setDir(1.9f);
     coreSt.sprites.push_back(it4);
+
+    posy += fac;
+
+    entity it5(core.models.ItemShipStop, posx, posy, entity::ItShipStop);
+    it5.setDir(1.6f);
+    coreSt.sprites.push_back(it5);
 
     int idx, state = 2;
     if (core.Score > 0)

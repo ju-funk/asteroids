@@ -26,8 +26,8 @@ public:
 
     int health;
     DWORD liveTime, currFire;
-    enum TypesEnty : DWORD {Zero=0, None=1, Ship=2, Fire=4, Astro=8, Shild=16, ItFire=32, ItShild=64, ItShip = 128, ItFireGun = 256};
-    static const int MaxItems = 22;
+    enum TypesEnty : DWORD {Zero=0, None=1, Ship=2, Fire=4, Astro=8, Shild=16, ItFire=32, ItShild=64, ItShip = 128, ItFireGun = 256, ItShipStop = 512};
+    static const int MaxItems = 29;
     static const TypesEnty Items[MaxItems+1];
 
     TypesEnty TypeEnty;
@@ -50,7 +50,7 @@ int getShildInf(coreInfo& core);
 void astNewGame(coreInfo& core, bool newgame);
 void astUpdateState(coreInfo& core);
 void astCheckCollision(coreInfo& core, entity* enta, entity* entb);
-void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where, bool start = false);
+void astGenItems(coreInfo& core, entity::TypesEnty ty, vertex& where);
 
 
 
