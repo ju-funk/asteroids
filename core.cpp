@@ -187,7 +187,7 @@ int coreMainThread( )
             output.clearBuffer();
 
             // let other processes have cpu time
-            Sleep( 10 );
+            Sleep( 5 );
         }
 
         // deallocate sprite list
@@ -217,8 +217,8 @@ int coreLoaderThread( coreInfo &core )
     models.stars.Sets(gfxGenStars(plist, core), scale);
 
     // make ship model
-    scale = 1.0f;
-    colour.SetColor( 1.0f, 0.0f, 1.0f );
+    scale = 1.5f;
+    colour.SetColor( 0.4f, 0.9f, 0.6f );
     col1.SetColor( -1.0f, 0.0f, 0.0f );
     models.ship.Sets( gfxGenShip(plist, scale, 0.08f, colour, col1), scale);
 
@@ -263,7 +263,7 @@ int coreLoaderThread( coreInfo &core )
     models.ItemFireGun.Sets(gfxGenItemFireGun(plist, scale, 0.08f, colour), scale);
 
     scale = 2.57f;
-    colour.SetColor(0.7f, 0.1f, 0.1f);
+    colour.SetColor(0.1f, 0.7f, 0.9f);
     models.ItemShipStop.Sets(gfxGenItemShipStop(plist, scale, 0.08f, colour), scale);
 
     // all models generated, convert to linear array
