@@ -63,18 +63,20 @@ void gfxDrawLoader( coreInfo &info, int Loop)
     }
 }
 
-size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, vertex& Shipcol, vertex& Shildcol)  // what = 0 -> none 1, -> ship, 2 = shild, 3 = ship & shild
+size_t gfxGenShip( array::list<vertex> &output, float radius, float detail, vertex& Shipcol, vertex& Shildcol)  // what = 0 -> none 1, -> ship, 2 = shild, 3 = ship & shild
 {
     size_t start = output.size();
 
     vertex pt;
-    float y2 = radius / 2.5f;
-    float y1 = y2 - radius;
 
     if (Shipcol.r > 0.0f)
     {
+        float rad = radius - 0.5f;
+        float y2 = rad / 2.5f;
+        float y1 = y2 - rad;
+
         pt = Shipcol;
-        for (float i = 0.0f; i <= radius; i += detail)
+        for (float i = 0.0f; i <= rad; i += detail)
         {
             pt.x = i;                                               /*          / \ < this */
             pt.y = y1 + i;                                          /*          --         */
@@ -92,7 +94,6 @@ size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, ver
 
     if (Shildcol.r > 0.0)
     {
-        radius += 0.5f;
         pt = Shildcol;
         pt.z = 0.0f;
 
@@ -184,7 +185,7 @@ size_t gfxGenItemShild(array::list<vertex>& output, float len, float detail, ver
 
     col.SetColor(-1.0f, 0.0f, 0.0f);
 
-    len /= 5.0f;
+    len /= 3.0f;
     gfxGenShip(output, len, 0.08f, col, colour);
 
     return output.size() - start;
@@ -200,7 +201,7 @@ size_t gfxGenItemShip(array::list<vertex>& output, float len, float detail, vert
 
     col.SetColor(-1.0f, 0.0f, 0.0f);
 
-    len /= 3.0f;
+    len /= 1.8f;
     gfxGenShip(output, len, 0.08f, colour, col);
 
     return output.size() - start;

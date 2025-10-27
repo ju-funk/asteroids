@@ -81,7 +81,7 @@ struct model
 // prototypes from gfx.cpp
 inline float frand( void );
 inline unsigned long int gfxRGB( float r, float g, float b );
-size_t gfxGenShip( array::list<vertex> &output, float &radius, float detail, vertex& Shipcol, vertex& Shildcol);
+size_t gfxGenShip( array::list<vertex> &output, float radius, float detail, vertex& Shipcol, vertex& Shildcol);
 size_t gfxGenAsteroid( array::list<vertex> &output, float radius, float detail, vertex &colour );
 struct coreInfo;
 size_t gfxGenStars( array::list<vertex> &output, coreInfo& core);

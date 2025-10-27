@@ -434,7 +434,7 @@ bool ShowStart(coreInfo& core)
     posy += fac;
 
     entity it5(core.models.ItemShipStop, posx, posy, entity::ItShipStop);
-    it5.setDir(1.6f);
+    it5.setDir(2.3f);
     coreSt.sprites.push_back(it5);
 
     int idx, state = 2;

@@ -88,7 +88,7 @@ void astCheckCollision( coreInfo &core, entity *enta, entity *entb )
     float axdist;
     float aydist;
 
-    if (enta->speed != 0.0)
+    if (enta->speed != 0.0f)
     {
         axdist = enta->pos.x - enta->pos.r * enta->speed;
         aydist = enta->pos.y - enta->pos.g * enta->speed;
