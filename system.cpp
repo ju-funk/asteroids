@@ -81,6 +81,7 @@ void sys::DebugOut(const TCHAR* pszFmt, ...)
 sys::screen::screen()
 {
     LoadSetup();
+    keys = setup;
 }
 
 
@@ -145,8 +146,20 @@ void sys::screen::LoadSetup()
     usetup = std::make_unique<BYTE[]>(_setupLen);
     setup = reinterpret_cast<_setup*>(usetup.get());
     setup->ExaSize = 0;
-    /////////
     //  set default
+    setup->Keys[ 0] = VK_UP;
+    setup->Keys[ 1] = VK_DOWN;
+    setup->Keys[ 2] = VK_RIGHT;
+    setup->Keys[ 3] = VK_LEFT;
+    setup->Keys[ 4] = VK_SPACE;
+    setup->Keys[ 5] = VK_CONTROL;
+    setup->Keys[ 6] = VK_SHIFT;
+
+    setup->Keys[ 7] = VK_WHEELUP;
+    setup->Keys[ 8] = VK_WHEELDO;
+    setup->Keys[ 9] = VK_LBUTTON;
+    setup->Keys[10] = VK_RBUTTON;
+    setup->Keys[11] = VK_MBUTTON;
 }
 
 void sys::screen::SaveSetup()
@@ -194,6 +207,22 @@ void sys::screen::SetNewHiScr(BYTE* dat, DWORD len)
 }
 
 
+void  sys::screen::GetSetSetup(_setup &curr, bool get)
+{
+    if (get)
+    {   // get current setup
+        memcpy(&curr, setup, _setupLen);
+    }
+    else 
+    {   // set new setup
+        memcpy(setup, &curr, _setupLen);
+        setup->crc = 0;
+
+        keys = setup;
+    }
+}
+
+
 
 
 bool sys::screen::Create(int width, int height, const TCHAR* szCaption)
@@ -226,7 +255,7 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
     switch( uMsg )
     {
     case WM_MOUSEWHEEL:
-        output.SetInputState(WM_MOUSEWHEEL, wParam, lParam);
+        output.SetInputState(uMsg, wParam);
         break;
    
     case WM_USER + 1:
@@ -259,22 +288,22 @@ LRESULT CALLBACK sys::screen::winDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
     return 0;
 }
 
-void sys::screen::SetInputState(UINT uMsg, WPARAM wParam, LPARAM lParam)
+void sys::screen::SetInputState(UINT uMsg, WPARAM wParam)
 {
     switch (uMsg)
     {
     case WM_MOUSEWHEEL:
         int delta = GET_WHEEL_DELTA_WPARAM(wParam); // Wheel
         if (delta > 0)
-            StWheel = 1; // up
+            keys.StWheel = VK_WHEELUP; // up
         else if (delta < 0)
-            StWheel = 2; // down
+            keys.StWheel = VK_WHEELDO; // down
         break;
     }
 }
 
 // input handling
-bool sys::screen::GetInputState(POINT& mousePos, int &wheel)
+bool sys::screen::GetInputState(POINT& mousePos)
 {
     bool ret = EnaMouse;
 
@@ -284,9 +313,6 @@ bool sys::screen::GetInputState(POINT& mousePos, int &wheel)
     if (mousePos.x < 0 || mousePos.y < 0 ||
         mousePos.x > iWidth || mousePos.y > iHeight)
         ret = false;
-
-    wheel = StWheel;
-    StWheel = 0;
 
     return ret;
 }
@@ -371,7 +397,7 @@ bool sys::screen::create()
     wClass.cbSize = sizeof(WNDCLASSEX);
     wClass.lpfnWndProc = winDlgProc;
     wClass.hInstance = hInstance = GetModuleHandle(0);
-    wClass.lpszClassName = szClass = (TCHAR *) _T("dilaDemo");
+    wClass.lpszClassName = szClass = _T("dila_funk-asteroids");
     wClass.hCursor = LoadCursor( 0, IDC_ARROW );
     wClass.hIcon   = LoadIcon(hInstance, (LPCTSTR)IPP_ICON);
 
@@ -635,22 +661,41 @@ void sys::screen::clearBuffer( void )
 /////////////////////////////////////////////////////////////////////
 
 
-bool KeyMan::GetKeyState(int Key, int Todo, int extkey)
+
+void KeyMan::operator =(sys::screen::_setup *newkeys)
+{
+    memcpy(KeyIds, newkeys->Keys, sizeof(newkeys->Keys));
+    KeyIds[eMenStart] = VK_F2;
+    KeyIds[eMenSetup] = VK_F3;
+    KeyIds[eMenJump]  = VK_F4;
+    KeyIds[eMenFull]  = VK_F5;
+    KeyIds[eMenTogg]  = VK_F6;
+    KeyIds[eMenEsc]   = VK_ESCAPE;
+    KeyIds[eMenMoLe]  = VK_LBUTTON;
+}
+
+
+bool KeyMan::GetKeyState(tKeyIds kId, int Todo)
 {
     bool ret = false, down = false;
+    short state;
+    int Key = KeyIds[kId];
 
     if(!output.IsActiv())
         return false;
 
-    short ekey = (GetAsyncKeyState(VK_SHIFT) & 0x8000) ? eKeyShift : 0;
-    ekey |= (GetAsyncKeyState(VK_CONTROL) & 0x8000) ? eKeyCtrl : 0;
-    ekey |= (GetAsyncKeyState(VK_MENU) & 0x8000) ? eKeyAlt : 0;
+    if(Key < VK_WHEELUP)
+        state = GetAsyncKeyState(Key);
+    else
+    {
+        if (Key == StWheel)
+        {
+            StWheel = 0;
+            return true;
+        }
 
-    if (ekey != extkey)
         return false;
-
-
-    short state = GetAsyncKeyState(Key);
+    }
 
     switch (Todo)
     {
@@ -658,7 +703,7 @@ bool KeyMan::GetKeyState(int Key, int Todo, int extkey)
         return ((state & 0x8000) == 0x8000);
     case MustToggle:
     {
-        kdat& dat = GetKDat(Key, extkey);
+        kdat& dat = GetKDat(Key);
         if (!dat.isPress)
         {
             dat.isPress = ((state & 0x8000) == 0x8000);
@@ -672,7 +717,7 @@ bool KeyMan::GetKeyState(int Key, int Todo, int extkey)
     }
     default:  // timer
     {
-        kdat& dat = GetKDat(Key, extkey);
+        kdat& dat = GetKDat(Key);
 
         if ((state & 0x8000) == 0x8000)
         {
@@ -693,13 +738,13 @@ bool KeyMan::GetKeyState(int Key, int Todo, int extkey)
 }
 
 
-KeyMan::kdat& KeyMan::GetKDat(int Key, int extkey)
+KeyMan::kdat& KeyMan::GetKDat(int Key)
 {
-    auto it = std::find_if(vkDat.begin(), vkDat.end(), [Key, extkey](kdat& v) { return v.Key == Key && v.extKeys == extkey; });
+    auto it = std::find_if(vkDat.begin(), vkDat.end(), [Key](kdat& v) { return v.Key == Key; });
     if (it != vkDat.end())
         return *it;
 
-    kdat dat(Key, extkey);
+    kdat dat(Key);
     vkDat.push_back(dat);
 
     return *std::prev(vkDat.end());
@@ -831,8 +876,6 @@ bool sys::screen::LoadWaves()
 
                     return true;
                 }
-
-                return false;
             }
         }
 

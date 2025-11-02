@@ -33,6 +33,10 @@ namespace sys
 #define  TRACE1(sz, p1) sys::DebugOut(sz, p1)
 
 
+#define  VK_WHEELUP   0x100
+#define  VK_WHEELDO   0x101
+
+
 // ------------------------------------------------------------------
 // screen object
 // ------------------------------------------------------------------
@@ -78,8 +82,8 @@ public:
         return DialogBoxParam(hInstance, MAKEINTRESOURCE(Idd), hWnd, DlgProcfnc, dwInitParam);
     }
 
-    bool GetInputState(POINT& mousePos, int& wheel);
-    void SetInputState(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    bool GetInputState(POINT& mousePos);
+    void SetInputState(UINT uMsg, WPARAM wParam);
     inline bool IsActiv() { return hWnd == GetForegroundWindow(); }
 
 
@@ -99,6 +103,17 @@ public:
     void SetNewHiScr(BYTE *dat, DWORD len);
 
 
+    struct _setup
+    {
+        DWORD  ExaSize;
+        DWORD32 crc;
+        enum {MAXKeys = 15};
+        int Keys[MAXKeys];
+
+        BYTE HiSoSta;
+    };
+
+    void GetSetSetup(_setup &curr, bool get = true);
 
 private:
     // main init function
@@ -112,7 +127,6 @@ private:
 
     // message handling proceedure
     static LRESULT CALLBACK winDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    int StWheel = 0;
     bool EnaMouse = true;
     bool msgLoop = false;
     bool EscDis = false;
@@ -134,7 +148,7 @@ private:
     int iHeight = 0;
 
     RECT rSize = {};
-    TCHAR* szClass = nullptr;
+    LPCWSTR szClass = nullptr;
     const TCHAR* pcTitle = nullptr;
     bool bVisibleState = false;
     int iExitCode = 0;
@@ -145,19 +159,9 @@ private:
     LONG_PTR windowStyle = 0;
 
 
-    struct _setup
-    {
-        DWORD  ExaSize;
-        DWORD32 crc;
-        int MKeys[5];
-        int KKeys[5];
-
-        BYTE HiSoSta;
-    };
-
     std::unique_ptr<BYTE[]> usetup;
     _setup *setup;
-    const TCHAR SetName[14] = { _T('a'), _T('s'), _T('t'), _T('e'), _T('r'), _T('o'), _T('i'), _T('d'), _T('s'), _T('.'), _T('d'), _T('a'), _T('t')};
+    const TCHAR *SetName = _T("asteroids.dat");
     const int _setupLen = sizeof(_setup) - sizeof(int);   // not count BYTE HiSoSta it is only a placeholder, compiler set as int
     void LoadSetup();
     void SaveSetup();
@@ -217,28 +221,40 @@ private:
 class KeyMan
 {
 public:
-    enum { IsDown = 0, MustToggle = -1, eKeyNone = 0, eKeyShift = 1, eKeyCtrl = 2, eKeyAlt = 4 }; // Todo > 0 --> timeout
-    bool GetKeyState(int Key, int Todo, int extkey = eKeyNone);
+    enum { IsDown = 0, MustToggle = -1, eKeyNone = 0 };
+    enum tKeyIds { 
+           eKeySpeedU, eKeySpeedD, eKeyRight, eKeyLeft, eKeyFire, eKeyShild, eKeyStop,
+           eMouSpeedU, eMouSpeedD, eMouFire, eMouShild, eMouStop,
+
+           eMenStart, eMenSetup, eMenJump, eMenFull, eMenTogg, eMenEsc, eMenMoLe,        eArryEnd};
+    //       F2          F3         F4        F5        F6       ESC    Left Mouse
+    bool GetKeyState(tKeyIds kId, int Todo);
+    
+    int StWheel = 0;
+
+    void operator =(sys::screen::_setup *newkeys);
 
 private:
     struct kdat
     {
-        int Key, extKeys;
+        int Key;
+
         bool isPress;
         std::chrono::steady_clock::time_point last;
 
-        kdat(int key, int ekey)
+        kdat(int key)
         {
             Key = key;
-            extKeys = ekey;
             isPress = false;
             last = std::chrono::high_resolution_clock::now();
         }
     };
 
+    int KeyIds[eArryEnd];
+
     std::vector<kdat> vkDat;
 
-    kdat& GetKDat(int Key, int extkey);
+    kdat& GetKDat(int Key);
 };
 
 
@@ -411,12 +427,12 @@ public:
         return HandleAccess(&td);
     }
 
-    void StopTimer()
+    void StopTimer()   // stop all timer
     {
         HandleAccess(nullptr);
     }
 
-    void EndTimer()
+    void EndTimer()    // end timer for exit app
     {
         HandleAccess(nullptr, true);
     }

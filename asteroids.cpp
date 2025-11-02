@@ -20,11 +20,9 @@ inline void astHandleInput( coreInfo &core )
     if(spaceship->health == 0)
         return;
 
-    int wheel;
-
     POINT mousePos;
 
-    if(output.GetInputState(mousePos, wheel))
+    if(output.GetInputState(mousePos))
     {
         mousePos.y -= core.iCHeight + static_cast<long>(spaceship->pos.y * core.fScaleY);
         mousePos.x -= core.iCWidth + static_cast<long>(spaceship->pos.x * core.fScaleX);
@@ -33,38 +31,38 @@ inline void astHandleInput( coreInfo &core )
         if (spaceship->rz < 0)
             spaceship->rz += M_2PI; // Bereich 0...2Pi
 
-        if(keys.GetKeyState(VK_LBUTTON, core.FireGun ? 30 : KeyMan::MustToggle))  // 19 ==> typeRate, ideal 30
+        if(keys.GetKeyState(KeyMan::eMouFire, core.FireGun ? 30 : KeyMan::MustToggle))  // 19 ==> typeRate, ideal 30
            astFireBullet(core);
 
-        if(keys.GetKeyState(VK_MBUTTON, KeyMan::MustToggle) && core.ShipStop)
+        if(keys.GetKeyState(KeyMan::eMouStop, KeyMan::MustToggle) && core.ShipStop)
             spaceship->pos.g = spaceship->pos.r = 0.0f;
 
-        if(keys.GetKeyState(VK_RBUTTON, KeyMan::MustToggle)) 
+        if(keys.GetKeyState(KeyMan::eMouShild, KeyMan::MustToggle))
             astShipShild(core, true);
 
-        if((wheel & 1) == 1)
+        if(keys.GetKeyState(KeyMan::eMouSpeedU, KeyMan::eKeyNone))
             spaceship->speed = 0.03f;
-        if((wheel & 2) == 2)
+        if(keys.GetKeyState(KeyMan::eMouSpeedD, KeyMan::eKeyNone))
             spaceship->speed = -0.03f;
     }
 
-    if(keys.GetKeyState(VK_SPACE, core.FireGun ? 30 : KeyMan::MustToggle))
+    if(keys.GetKeyState(KeyMan::eKeyFire, core.FireGun ? 30 : KeyMan::MustToggle))
         astFireBullet(core);
 
-    if(keys.GetKeyState(VK_UP, KeyMan::IsDown))
+    if(keys.GetKeyState(KeyMan::eKeySpeedU, KeyMan::IsDown))
         spaceship->speed = 0.01f;
-    if(keys.GetKeyState(VK_DOWN, KeyMan::IsDown))
+    if(keys.GetKeyState(KeyMan::eKeySpeedD, KeyMan::IsDown))
         spaceship->speed = -0.01f;
 
-    if(keys.GetKeyState(VK_LEFT, KeyMan::IsDown))
+    if(keys.GetKeyState(KeyMan::eKeyLeft, KeyMan::IsDown))
         spaceship->rz -= 0.04f;
-    if(keys.GetKeyState(VK_RIGHT, KeyMan::IsDown))
+    if(keys.GetKeyState(KeyMan::eKeyRight, KeyMan::IsDown))
         spaceship->rz += 0.04f;
 
-    if (keys.GetKeyState('S', KeyMan::MustToggle))
+    if (keys.GetKeyState(KeyMan::eKeyShild, KeyMan::MustToggle))
             astShipShild(core, true);
 
-    if (keys.GetKeyState(VK_ESCAPE, KeyMan::MustToggle))
+    if (keys.GetKeyState(KeyMan::eMenEsc, KeyMan::MustToggle))
     {
         entity* ship = core.GetShip();
         ship->health = 0;
@@ -73,7 +71,7 @@ inline void astHandleInput( coreInfo &core )
         core.Score = 0;
     }
 
-    if(keys.GetKeyState(VK_END, KeyMan::MustToggle) && core.ShipStop)
+    if(keys.GetKeyState(KeyMan::eKeyStop, KeyMan::MustToggle) && core.ShipStop)
         spaceship->pos.g = spaceship->pos.r = 0.0f;
 }
 
