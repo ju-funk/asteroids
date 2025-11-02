@@ -109,3 +109,7 @@ void astDeallocSprites( coreInfo &core );
 int  coreMainThread( );
 int  coreLoaderThread( coreInfo &core );
 bool coreBadAlloc( void );
+
+void InitVkMap();
+void DelVkMap();
+

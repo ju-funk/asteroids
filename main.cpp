@@ -3,8 +3,8 @@
 
 // global running status flags
 bool bHasTermSignal = false;
-sys::screen output;
 KeyMan keys;
+sys::screen output;
 TimerClass secTimer;
 
 
@@ -17,7 +17,7 @@ TimerClass secTimer;
 int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
 {
     // create video buffer in a desktop window
-    if(!output.Create(1280, 720, _T("dila & funk / 2025")))
+    if(!output.Create(1280, 720, _T("dila (02/06) & funk (10/25)")))
         return 0;
 
     // spawn the render thread. see core.cpp

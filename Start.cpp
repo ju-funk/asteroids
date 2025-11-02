@@ -1,4 +1,4 @@
-#include "main.h"
+﻿#include "main.h"
 #include "core.h"
 
 
@@ -68,47 +68,419 @@ void StartRenderView(coreInfo& core)
     }
 }
 
-inline bool StartHandleInput(int &state)
+HHOOK hhook = nullptr;
+HHOOK hhookIg = nullptr;
+HWND SetupDlg = nullptr;
+int  glId = 0;
+TimerClass::tTimerVar flash;
+
+using myVkMap = std::map<int, TCHAR*>;
+using mpVkMap = std::pair<int, TCHAR*>;
+
+myVkMap VkMap;
+
+void InitVkMap()
 {
-    int wheel;
+    auto VkIns = [](int Vk) -> void
+    {
+        TCHAR buf[200];
+        UINT scanCode = MapVirtualKey(Vk, MAPVK_VK_TO_VSC);
+        LONG lParam = (scanCode << 16);
+        lParam |= 0x01000000;
+        int ret = GetKeyNameText(lParam, buf, sizeof(buf) / sizeof(TCHAR));
+
+        size_t len = _tcslen(buf) + 1;
+        if (len > 0)
+        {
+            TCHAR* pb = new TCHAR[len];
+            _tcscpy_s(pb, len, buf);
+            //VkMap.insert({ Vk, pb });
+            VkMap[Vk] = pb;
+        }
+    };
+
+    VkIns(VK_END);
+    VkIns(VK_HOME);
+    VkIns(VK_INSERT);
+    VkIns(VK_DELETE);
+}
+
+void DelVkMap()
+{
+    for (mpVkMap it : VkMap)
+        delete [] it.second;
+}
+
+
+LRESULT CALLBACK IgnoreProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION)  //  process message
+        if (wParam != WM_MOUSEMOVE)
+            return TRUE;
+
+    return CallNextHookEx(hhook, nCode, wParam, lParam);
+}
+
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION)  //  process message
+    {
+        KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
+        if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
+        {
+            switch (pKeyboard->vkCode)
+            {
+            case VK_LWIN:
+            case VK_RWIN:
+            case VK_ESCAPE:
+            case VK_SNAPSHOT:
+            case VK_VOLUME_MUTE:
+            case VK_VOLUME_DOWN:
+            case VK_VOLUME_UP:
+            case VK_LAUNCH_APP1:
+            case VK_LAUNCH_APP2:
+            case VK_NUMLOCK:
+            case VK_SCROLL:
+                break;
+
+            default:
+                PostMessage(SetupDlg, WM_USER + 10, glId, pKeyboard->vkCode);
+            }
+        }
+        return TRUE;
+    }
+
+    return CallNextHookEx(hhook, nCode, wParam, lParam);
+}
+
+LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    int wheelDelta;
+
+    if (nCode == HC_ACTION)  // process the message 
+    {
+        switch (wParam)
+        {
+        case WM_LBUTTONDOWN:
+            PostMessage(SetupDlg, WM_USER + 10, glId, VK_LBUTTON);
+            return TRUE;
+        case WM_RBUTTONDOWN:
+            PostMessage(SetupDlg, WM_USER + 10, glId, VK_RBUTTON);
+            return TRUE;
+        case WM_MBUTTONDOWN:
+            PostMessage(SetupDlg, WM_USER + 10, glId, VK_MBUTTON);
+            return TRUE;
+        case WM_MOUSEWHEEL:
+            wheelDelta = GET_WHEEL_DELTA_WPARAM(((MSLLHOOKSTRUCT*)lParam)->mouseData) > 0 ? VK_WHEELUP : VK_WHEELDO;
+            PostMessage(SetupDlg, WM_USER + 10, glId, wheelDelta);
+            return TRUE;
+        }
+    }
+
+    return CallNextHookEx(hhook, nCode, wParam, lParam);
+}
+
+void WinFlash(HWND box, bool flash)
+{
+   FLASHWINFO fwi = {};
+
+   fwi.cbSize    = sizeof(FLASHWINFO);
+   fwi.hwnd      = box;
+   fwi.dwFlags   = flash ? (FLASHW_ALL | FLASHW_TIMER) : FLASHW_STOP;
+   fwi.dwTimeout = 0;
+   fwi.uCount    = 0;
+
+   FlashWindowEx(&fwi);
+   //FlashWindow(box, TRUE);
+}
+
+void HndChkBox(HWND dlg, int Id, int keyId)
+{
+    const TCHAR *vi;
+    TCHAR  buf[200] = {};
+
+    if (keyId < 0)
+    {  // wait press
+        glId = Id;
+
+        if (hhook == nullptr)
+        {
+            WinFlash(dlg, true);
+            flash = 1;
+            secTimer.NewTimer(flash, [dlg, Id]() {
+                static bool fla = false;
+                fla = !fla;
+                SendDlgItemMessage(dlg, Id, BM_SETCHECK, fla ? BST_UNCHECKED : BST_CHECKED, 0);
+            }, false);
+
+            if (keyId == -1)
+            {
+                SetDlgItemText(dlg, Id, _T("Press a Key"));
+                hhook   = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, GetModuleHandle(NULL), 0);
+                hhookIg = SetWindowsHookEx(WH_MOUSE_LL   , IgnoreProc  , GetModuleHandle(NULL), 0);
+            }
+            else
+            {
+                SetDlgItemText(dlg, Id, _T("Press a Mouse Button\n"));
+                hhook   = SetWindowsHookEx(WH_MOUSE_LL   , MouseProc  , GetModuleHandle(NULL), 0);
+                hhookIg = SetWindowsHookEx(WH_KEYBOARD_LL, IgnoreProc , GetModuleHandle(NULL), 0);
+            }
+        }
+    }
+    else
+    {  // show
+        SendDlgItemMessage(dlg, Id, BM_SETCHECK, BST_UNCHECKED, 0);
+        switch (keyId)
+        {
+        case VK_MBUTTON:
+            vi = _T("Middle Button");
+            break;
+        case VK_LBUTTON:
+            vi = _T("Left Button");
+            break;
+        case VK_RBUTTON:
+            vi = _T("Right Button");
+            break;
+        case VK_WHEELUP:
+            vi = _T("Wheel Up");
+            break;
+        case VK_WHEELDO:
+            vi = _T("Wheel Down");
+            break;
+
+        case VK_UP:
+            vi = _T("▲");
+            break;
+        case VK_DOWN:
+            vi = _T("▼");
+            break;
+        case VK_RIGHT:
+            vi = _T("►");
+            break;
+        case VK_LEFT:
+            vi = _T("◄");
+            break;
+
+        case VK_PRIOR:
+            vi = _T("PAGE ▲");
+            break;
+        case VK_NEXT:
+            vi = _T("PAGE ▼");
+            break;
+
+        case VK_END:
+        case VK_HOME:
+        case VK_INSERT:
+        case VK_DELETE:
+            vi = VkMap[keyId];
+            break;
+
+        case VK_LSHIFT:
+            vi = _T("Left SHIFT");
+            break;
+        case VK_RSHIFT:
+            vi = _T("Right SHIFT");
+            break;
+        case VK_LCONTROL:
+            vi = _T("Left CONTROL");
+            break;
+        case VK_RCONTROL:
+            vi = _T("Right CONTROL");
+            break;
+        case VK_LMENU:
+            vi = _T("Left ALT");
+            break;
+        case VK_RMENU:
+            vi = _T("Right ALT");
+            break;
+
+        case VK_APPS:
+            vi = _T("APP Key");
+            break;
+
+        case VK_BROWSER_BACK:
+            vi = _T("BROWSER BACK");
+            break;
+        case VK_BROWSER_FORWARD:
+            vi = _T("BROWSER FORWARD");
+            break;
+        case VK_BROWSER_REFRESH:
+            vi = _T("BROWSER REFRESH");
+            break;
+        case VK_BROWSER_STOP:
+            vi = _T("BROWSER STOP");
+            break;
+        case VK_BROWSER_SEARCH:
+            vi = _T("BROWSER SEARCH");
+            break;
+        case VK_BROWSER_FAVORITES:
+            vi = _T("BROWSER FAVORITES");
+            break;
+        case VK_BROWSER_HOME:
+            vi = _T("BROWSER HOME");
+            break;
+
+        case VK_MEDIA_NEXT_TRACK:
+            vi = _T("MEDIA NEXT TRACK");
+            break;
+        case VK_MEDIA_PREV_TRACK:
+            vi = _T("MEDIA PREV TRACK");
+            break;
+        case VK_MEDIA_STOP:
+            vi = _T("MEDIA STOP");
+            break;
+        case VK_MEDIA_PLAY_PAUSE:
+            vi = _T("MEDIA PLAY PAUSE");
+            break;
+        case VK_LAUNCH_MAIL:
+            vi = _T("LAUNCH MAIL");
+            break;
+        case VK_LAUNCH_MEDIA_SELECT:
+            vi = _T("LAUNCH MEDIA SELECT");
+            break;
+ 
+        default:
+            UINT scanCode = MapVirtualKey(keyId, MAPVK_VK_TO_VSC);
+            LONG lParam = (scanCode << 16);
+            int ret = GetKeyNameText(lParam, buf, sizeof(buf) / sizeof(TCHAR));
+            vi = buf;
+
+            switch (ret)
+            {
+            case 0:
+                _stprintf_s(buf, _T("Key = [%03i]"), keyId);
+                break;
+            case 1:
+                _stprintf_s(buf, _T("Key = %c"), buf[0]);
+                break;
+            default:
+                _stprintf_s(buf, _T("%s = [%03i]"), buf, keyId);
+                break;
+            }
+            break;
+        }
+
+        SetDlgItemText(dlg, Id, vi);
+    }
+}
+
+
+
+INT_PTR CALLBACK SetupDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    static sys::screen::_setup *newset;
+    WORD id = LOWORD(wParam);
+
+    switch (uMsg)
+    {
+    case WM_INITDIALOG:
+        newset = reinterpret_cast<sys::screen::_setup*>(lParam);
+        for(int i = IDC_KSPUP; i <= IDC_MSTOP; ++i)
+            HndChkBox(hwndDlg, i, newset->Keys[i - IDC_KSPUP]);
+        SetupDlg = hwndDlg;
+        break;
+
+    case WM_COMMAND:
+        switch (id)
+        {
+        case IDOK:
+            EndDialog(hwndDlg, IDOK);
+            break;
+        case IDCANCEL:
+            EndDialog(hwndDlg, IDCANCEL);
+            break;
+        case IDC_KSPUP:
+        case IDC_KSPDO:
+        case IDC_KRIGHT:
+        case IDC_KLEFT:
+        case IDC_KFIRE:
+        case IDC_KSHILD:
+        case IDC_KSTOP:
+            HndChkBox(hwndDlg, id, -1);
+            break;
+        case IDC_MSPUP:
+        case IDC_MSPDO:
+        case IDC_MFIRE:
+        case IDC_MSHILD:
+        case IDC_MSTOP:
+            HndChkBox(hwndDlg, id, -2);
+            break;
+        }
+        break;
+
+    case WM_USER+10:
+        UnhookWindowsHookEx(hhookIg);
+        UnhookWindowsHookEx(hhook);
+
+        WinFlash(hwndDlg, false);
+        secTimer.StopTimer(flash);
+        hhook = hhookIg = nullptr;
+        HndChkBox(hwndDlg, id, static_cast<int>(lParam));
+        if(id >= IDC_KSPUP && id <= IDC_MSTOP)
+            newset->Keys[id - IDC_KSPUP] = static_cast<int>(lParam);
+        break;
+
+    case WM_CLOSE:
+        EndDialog(hwndDlg, IDCANCEL);
+        break;
+    }
+
+    return FALSE;
+}
+
+
+void Setup(coreInfo& core)
+{
+    sys::screen::_setup newset;
+    output.GetSetSetup(newset);
+
+    if (output.ShowDlg(IDD_SETUP, SetupDlgProc, reinterpret_cast<LPARAM>(&newset)) == IDOK)
+        output.GetSetSetup(newset, false);
+}
+
+
+inline bool StartHandleInput(int &state, coreInfo& core)
+{
     POINT mousePos;
 
-
     if ((state & ~1) == 4)
-    {
-        if (keys.GetKeyState(VK_F4, KeyMan::MustToggle))
+    {   // High Score Handling
+        if (keys.GetKeyState(KeyMan::eMenJump, KeyMan::MustToggle))
             state = 2;
 
-        if (keys.GetKeyState(VK_ESCAPE, KeyMan::MustToggle))
+        if (keys.GetKeyState(KeyMan::eMenEsc, KeyMan::MustToggle))
             state = 2;
 
-        if (output.GetInputState(mousePos, wheel))
+        if (output.GetInputState(mousePos))
         {
-            if (keys.GetKeyState(VK_LBUTTON, KeyMan::MustToggle))
+            if (keys.GetKeyState(KeyMan::eMenMoLe, KeyMan::MustToggle))
                 state = 2;
         }
     }
     else
     {
-        if (output.GetInputState(mousePos, wheel))
+        if (output.GetInputState(mousePos))
         {
-            if (keys.GetKeyState(VK_LBUTTON, KeyMan::MustToggle))
+            if (keys.GetKeyState(KeyMan::eMenMoLe, KeyMan::MustToggle))
                 return true;
         }
 
-        if (keys.GetKeyState(VK_F2, KeyMan::MustToggle))
+        if (keys.GetKeyState(KeyMan::eMenStart, KeyMan::MustToggle))
             return true;
 
-        if (keys.GetKeyState(VK_F6, KeyMan::MustToggle))
+        if (keys.GetKeyState(KeyMan::eMenSetup, KeyMan::MustToggle))
+            Setup(core);
+
+        if (keys.GetKeyState(KeyMan::eMenTogg, KeyMan::MustToggle))
         {
             output.GetTogMouse(true);
             output.Sound(IDW_GETITE);
         }
 
-        if (keys.GetKeyState(VK_F4, KeyMan::MustToggle))
+        if (keys.GetKeyState(KeyMan::eMenJump, KeyMan::MustToggle))
             state = 4;
 
-        if (keys.GetKeyState(VK_F5, KeyMan::MustToggle))
+        if (keys.GetKeyState(KeyMan::eMenFull, KeyMan::MustToggle))
             output.ToggScreen();
     }
 
@@ -450,7 +822,7 @@ bool ShowStart(coreInfo& core)
 
     while (!bHasTermSignal)
     {
-        if(StartHandleInput(state))
+        if(StartHandleInput(state, core))
             break;
 
         if (state == 4)

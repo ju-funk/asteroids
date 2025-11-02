@@ -151,6 +151,7 @@ int coreMainThread( )
     // setup output parameters
     coreInfo core;
     core.LoadHiScore();
+    InitVkMap();
 
     core.pBuffer = output.getScreenBuffer();
     core.iWidth = output.getWidth();
@@ -197,6 +198,8 @@ int coreMainThread( )
 
     // signal thread has finished
     output.signalQuit();
+
+    DelVkMap();
 
     return 0;
 }
