@@ -662,13 +662,13 @@ void ShowHiScore(coreInfo& core, int HiIdx)
 
 
 
-void ViewText(coreInfo& core, float posx1, float posy1, float posx2, float step)
+void ViewText(coreInfo& core, float posx1, float posy1, float posx2, float stpx, float stpy)
 {
     const TCHAR *tit = output.GetTitle();
 
     output.GetSetEscDis(false);
 
-    SIZE si, size = ShowText(_T(" Astroids "), core.iCWidth, 5, _T("Segoe Script"), 120, TA_CENTER, RGB(120, 30, 200), RGB(30, 100, 200), 3);
+    SIZE si, size = ShowText(_T(" Asteroids "), core.iCWidth, 5, _T("Segoe Script"), 120, TA_CENTER, RGB(120, 30, 200), RGB(30, 100, 200), 3);
     si = ShowText(tit, core.iCWidth, size.cy + 2, _T("Segoe Script"), 18, TA_CENTER, RGB(192, 192, 192), RGB(0, 0, 0), 1, false, TRANSPARENT);
     ShowText(tit, core.iCWidth + si.cx / 2, size.cy + 2);
     size.cy += si.cx / 3;
@@ -710,21 +710,21 @@ void ViewText(coreInfo& core, float posx1, float posy1, float posx2, float step)
     };
 
     size = ShowText(_T("Ship"), 0, 0, _T("Arial"), 18, TA_LEFT, RGB(20, 230, 30), RGB(0, 0, 0), 3, false, TRANSPARENT);
-    posx1 += step / 1.6f;
-    posx2 += step / 2.0f;
+    posx1 += stpx / 1.6f;
+    posx2 += stpx / 2.0f;
     posy1 -= size.cy / (2 * core.fScaleY);
     ShowText(_T("Ship"), Xy(posx1), Xy(posy1, false));
     ShowText(_T("Ship with Shild"), Xy(posx2), Xy(posy1, false));
-    posy1 += step;
+    posy1 += stpy;
     ShowText(_T("Astroids"), Xy(posx1), Xy(posy1, false));
     ShowText(_T("Bullet"), Xy(posx2), Xy(posy1, false));
-    posy1 += step;
+    posy1 += stpy;
     ShowText(_T("Bonus bullet (50)"), Xy(posx1), Xy(posy1, false));
     ShowText(_T("Fire-Gun (30 sec)"), Xy(posx2), Xy(posy1, false));
-    posy1 += step;
+    posy1 += stpy;
     ShowText(_T("Bonus shild (30 sec)"), Xy(posx1), Xy(posy1, false));
     ShowText(_T("Extra Life"), Xy(posx2), Xy(posy1, false));
-    posy1 += step;
+    posy1 += stpy;
     ShowText(_T("You can Stop ship"), Xy(posx1), Xy(posy1, false));
 }
 
@@ -745,12 +745,14 @@ bool ShowStart(coreInfo& core)
     coreSt.sprites.push_back(starfield);
     coreHS.sprites.push_back(starfield);
 
-    float fac  = 7.0f;
-    float posxm1, posx = -core.fSWidth + fac*2.0f;
-    float posys1, posy = -core.fSHeight + fac*3.5f;
-    float posx1 = fac*3.5f;
+    float facx = core.iWidth  / 182.86f;
+    float facy = core.iHeight / 95.0f;
+    float posxm1, posx = -core.fSWidth + facx*2.5f;
+    float posys1, posy = -core.fSHeight + 21.0f;
+    float posx1 = facx*3.5f;
+    posy += (core.fSHeight*2 - 21.0f - facy * 5.5f) / 2.0f;
     posys1 = posy;
-    posxm1 = posx + fac*0.75f;
+    posxm1 = posx + facx*0.75f;
 
     entity player(core.models.ship, posxm1, posy, entity::Ship);
     coreSt.sprites.push_back(player);
@@ -758,32 +760,38 @@ bool ShowStart(coreInfo& core)
     entity splayer(core.models.shild, posx1, posy, entity::Shild);
     coreSt.sprites.push_back(splayer);
 
-    posy += fac;
+    posy += facy;
     entity bullet(core.models.misile, posx1 , posy, entity::Fire);
     bullet.setDir(1.2f);
     coreSt.sprites.push_back(bullet);
 
-    entity as1(core.models.stroidBig, posx - fac * 0.11f, posy, entity::Astro);
+
+    entity as1(core.models.stroidBig, posxm1, posy, entity::Astro);
+    float width = as1.points.scale * 2;
+    as1.pos.x = posxm1 - width;
     as1.setDir(1.3f);
     coreSt.sprites.push_back(as1);
-    as1.pos.x =  posx + fac;
-    as1.pos.y =  posy - fac*3.8f;
+    as1.pos.x = posx;
+    as1.pos.y = -core.fSHeight + width * 0.85f;
     coreHS.sprites.push_back(as1);
-    as1.pos.x =  -posx - fac;
-    as1.pos.y =  posy - fac*3.8f;
+    as1.pos.x =  -posx;
+    as1.pos.y = -core.fSHeight + width * 0.85f;
     coreHS.sprites.push_back(as1);
 
     entity as2(core.models.stroidMed, posxm1, posy, entity::Astro);
+    width = as2.points.scale * 2;
     as2.setDir(1.5f);
     coreSt.sprites.push_back(as2);
 
-    entity as3(core.models.stroidTiny, posx + fac * 0.42f, posy + fac * 0.4f, entity::Astro);
+    entity as3(core.models.stroidTiny, posxm1, posy, entity::Astro);
+    as3.pos.x = posxm1 - width * 0.6f;
+    as3.pos.y = posy + width * 0.7f;
     as3.setDir(1.7f);
     coreSt.sprites.push_back(as3);
 
 
-    posy += fac;
-    posx += fac * 0.75f;
+    posy += facy;
+    posx += facx * 0.75f;
 
     entity it1(core.models.ItemFire, posx, posy, entity::ItFire);
     it1.setDir(2.5f);
@@ -793,7 +801,7 @@ bool ShowStart(coreInfo& core)
     it2.setDir(2.0f);
     coreSt.sprites.push_back(it2);
 
-    posy += fac;
+    posy += facy;
 
     entity it3(core.models.ItemShild, posx, posy, entity::ItShild);
     it3.setDir(1.9f);
@@ -803,7 +811,7 @@ bool ShowStart(coreInfo& core)
     it4.setDir(1.9f);
     coreSt.sprites.push_back(it4);
 
-    posy += fac;
+    posy += facy;
 
     entity it5(core.models.ItemShipStop, posx, posy, entity::ItShipStop);
     it5.setDir(2.3f);
@@ -837,7 +845,7 @@ bool ShowStart(coreInfo& core)
         if ((state & ~1) == 4)
             ShowHiScore(core, idx);
         else 
-            ViewText(core, posxm1, posys1, posx1, fac);
+            ViewText(core, posxm1, posys1, posx1, facx, facy);
 
         // blit frame and clear backbuffer
         output.flipBuffers();

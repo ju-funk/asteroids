@@ -45,7 +45,7 @@ class sys::screen
 public:
     screen();
     ~screen();
-    bool Create(int width, int height, const TCHAR* szCaption);
+    bool Create(int width, int height, const TCHAR* szCaption, const TCHAR* devel);
     void cleanup(void);
 
     // display setup functions
@@ -69,7 +69,7 @@ public:
     int getWidth(void) { return iWidth; }
     int getHeight(void) { return iHeight; }
 
-    inline const TCHAR* GetTitle() { return pcTitle; }
+    inline const TCHAR* GetTitle() { return pcDevel; }
     void ToggScreen() { PostMessage(hWnd, WM_USER + 1, 0, 0); }
     inline bool GetFullScr() {return hasFullScreen;}
     bool GetTogMouse(bool ena = false) {
@@ -150,6 +150,7 @@ private:
     RECT rSize = {};
     LPCWSTR szClass = nullptr;
     const TCHAR* pcTitle = nullptr;
+    const TCHAR* pcDevel = nullptr;
     bool bVisibleState = false;
     int iExitCode = 0;
 

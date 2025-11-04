@@ -254,7 +254,7 @@ void astFireBullet( coreInfo &core )
     // set actual speed and set direction
     bullet.speed = 0.7f;
     bullet.setDir( ship->rz );
-    bullet.liveTime = core.FireGun ? 0 : static_cast<DWORD>(45 / bullet.speed) + 1;
+    bullet.liveTime = core.FireGun ? 0 : static_cast<DWORD>(core.fSHeight / bullet.speed);
     bullet.currFire = core.FireGun ? 1 : --core.Fires;
     if (core.Fires == 3)
         output.Sound(IDW_FIRWAR);
@@ -651,12 +651,8 @@ bool entity::checkShip()
 
 void entity::TestLive()
 {
-    if (liveTime != 0)
-    {
-        --liveTime;
-        if (liveTime == 0)
-            setExplore();
-    }
+    if (--liveTime == 0)
+        setExplore();
 }
 
 // ------------------------------------------------------------------
