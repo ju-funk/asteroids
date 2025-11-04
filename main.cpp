@@ -17,7 +17,7 @@ TimerClass secTimer;
 int WINAPI tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
 {
     // create video buffer in a desktop window
-    if(!output.Create(1280, 720, _T("dila (02/06) & funk (10/25)")))
+    if(!output.Create(1280, 720, _T("Asteroids v1.0"), _T("dila (02/06) & funk (10/25)")))
         return 0;
 
     // spawn the render thread. see core.cpp

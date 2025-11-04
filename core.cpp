@@ -181,7 +181,7 @@ int coreMainThread( )
         {
             // set game vars and redraw frame, break on failure
             astUpdateState(core);
-            coreRenderView( core );
+            coreRenderView(core);
 
             // blit frame and clear backbuffer
             output.flipBuffers();
@@ -193,7 +193,7 @@ int coreMainThread( )
 
         // deallocate sprite list
         bHasTermSignal = true;
-        astDeallocSprites( core );
+        astDeallocSprites(core);
     }
 
     // signal thread has finished

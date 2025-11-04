@@ -15,7 +15,7 @@ public:
     void swapSldDir( entity *with, float speed );
     void Spin();
     bool checkShip();
-    void TestLive();
+    inline void TestLive();
     void swapSpeed( entity *with );
     bool setExplore(bool destry=false);
 

@@ -225,9 +225,10 @@ void  sys::screen::GetSetSetup(_setup &curr, bool get)
 
 
 
-bool sys::screen::Create(int width, int height, const TCHAR* szCaption)
+bool sys::screen::Create(int width, int height, const TCHAR* szCaption, const TCHAR* devel)
 {
     pcTitle = szCaption;
+    pcDevel = devel;
     iWidth = width;
     iHeight = height;
 
