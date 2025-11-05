@@ -123,5 +123,22 @@
     <Image Include="asteroids.ico">
       <Filter>Resource</Filter>
     </Image>
+    <Image Include="preview.gif">
+      <Filter>Resource</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md">
+      <Filter>docu</Filter>
+    </None>
+    <None Include="LICENSE">
+      <Filter>docu</Filter>
+    </None>
+    <None Include="waves\_License - GDC Game Audio.pdf">
+      <Filter>docu</Filter>
+    </None>
+    <None Include="waves\_Game Audio GDC Bundle 2024 (Part 8) Filelist.xlsx">
+      <Filter>docu</Filter>
+    </None>
   </ItemGroup>
 </Project>

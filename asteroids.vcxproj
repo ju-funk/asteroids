@@ -76,6 +76,13 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="asteroids.ico" />
+    <Image Include="preview.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="LICENSE" />
+    <None Include="README.md" />
+    <None Include="waves\_Game Audio GDC Bundle 2024 (Part 8) Filelist.xlsx" />
+    <None Include="waves\_License - GDC Game Audio.pdf" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
