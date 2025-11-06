@@ -35,54 +35,52 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="asteroids.cpp" />
-    <ClCompile Include="core.cpp" />
-    <ClCompile Include="gfx.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Start.cpp" />
-    <ClCompile Include="system.cpp" />
+    <ClCompile Include="src\asteroids.cpp" />
+    <ClCompile Include="src\core.cpp" />
+    <ClCompile Include="src\gfx.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Start.cpp" />
+    <ClCompile Include="src\system.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="array.h" />
-    <ClInclude Include="asteroids.h" />
-    <ClInclude Include="core.h" />
-    <ClInclude Include="gfx.h" />
-    <ClInclude Include="main.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="system.h" />
+    <ClInclude Include="inc\array.h" />
+    <ClInclude Include="inc\asteroids.h" />
+    <ClInclude Include="inc\core.h" />
+    <ClInclude Include="inc\gfx.h" />
+    <ClInclude Include="inc\main.h" />
+    <ClInclude Include="inc\resource.h" />
+    <ClInclude Include="inc\system.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.txt" />
+    <Text Include="doc\readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="asteroids.rc" />
+    <ResourceCompile Include="res\asteroids.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Media Include="waves\AstExp.wav" />
-    <Media Include="waves\Asthit.wav" />
-    <Media Include="waves\AstShld.wav" />
-    <Media Include="waves\ColAst.wav" />
-    <Media Include="waves\CollAst.wav" />
-    <Media Include="waves\Fire.wav" />
-    <Media Include="waves\FireSh.wav" />
-    <Media Include="waves\FireWar.wav" />
-    <Media Include="waves\GenItem.wav" />
-    <Media Include="waves\GetItem.wav" />
-    <Media Include="waves\Level.wav" />
-    <Media Include="waves\ShipEx.wav" />
-    <Media Include="waves\Shipexpl.wav" />
-    <Media Include="waves\Start.wav" />
-    <Media Include="waves\StartSc.wav" />
+    <Media Include="res\waves\AstExp.wav" />
+    <Media Include="res\waves\Asthit.wav" />
+    <Media Include="res\waves\AstShld.wav" />
+    <Media Include="res\waves\ColAst.wav" />
+    <Media Include="res\waves\FireSh.wav" />
+    <Media Include="res\waves\FireWar.wav" />
+    <Media Include="res\waves\GenItem.wav" />
+    <Media Include="res\waves\GetItem.wav" />
+    <Media Include="res\waves\Level.wav" />
+    <Media Include="res\waves\ShipEx.wav" />
+    <Media Include="res\waves\Start.wav" />
+    <Media Include="res\waves\StartSc.wav" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="asteroids.ico" />
-    <Image Include="preview.gif" />
+    <Image Include="res\asteroids.ico" />
+    <Image Include="res\preview.gif" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LICENSE" />
     <None Include="README.md" />
-    <None Include="waves\_Game Audio GDC Bundle 2024 (Part 8) Filelist.xlsx" />
-    <None Include="waves\_License - GDC Game Audio.pdf" />
+    <None Include="doc\waves\_Game Audio GDC Bundle 2024 (Part 8) Filelist.xlsx" />
+    <None Include="doc\waves\_License - GDC Game Audio.pdf" />
+    <None Include="doc\waves\_Readme.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -212,6 +210,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -226,6 +225,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -241,6 +241,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -263,6 +264,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -282,6 +284,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -296,6 +299,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -311,6 +315,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -333,6 +338,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

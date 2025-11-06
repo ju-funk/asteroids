@@ -173,7 +173,7 @@ private:
     ////////////////
     const WORD StartHeader = 20;
     const WORD WaveStartData = StartHeader + 24;
-    const int  MaxWaveStreams = 5;
+    const size_t MaxWaveStreams = 5;
    
     struct vtSound
     {

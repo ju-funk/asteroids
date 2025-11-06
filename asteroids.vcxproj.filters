@@ -1,144 +1,138 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Quelldateien">
+    <Filter Include="Sourcefiles">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Headerdateien">
+    <Filter Include="Headerfiles">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="docu">
-      <UniqueIdentifier>{44266a1c-fd50-4875-af08-09b54ebe02da}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Waves">
-      <UniqueIdentifier>{e624ca48-4171-4934-ae25-d39a4dba64f4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resource">
       <UniqueIdentifier>{3a0e266c-7b18-4062-9270-5fd7a45416f2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource\Waves">
+      <UniqueIdentifier>{e624ca48-4171-4934-ae25-d39a4dba64f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="doc">
+      <UniqueIdentifier>{44266a1c-fd50-4875-af08-09b54ebe02da}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="system.cpp">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="src\asteroids.cpp">
+      <Filter>Sourcefiles</Filter>
     </ClCompile>
-    <ClCompile Include="asteroids.cpp">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="src\core.cpp">
+      <Filter>Sourcefiles</Filter>
     </ClCompile>
-    <ClCompile Include="core.cpp">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="src\gfx.cpp">
+      <Filter>Sourcefiles</Filter>
     </ClCompile>
-    <ClCompile Include="gfx.cpp">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Sourcefiles</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="src\Start.cpp">
+      <Filter>Sourcefiles</Filter>
     </ClCompile>
-    <ClCompile Include="Start.cpp">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="src\system.cpp">
+      <Filter>Sourcefiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="system.h">
-      <Filter>Headerdateien</Filter>
+    <ClInclude Include="inc\array.h">
+      <Filter>Headerfiles</Filter>
     </ClInclude>
-    <ClInclude Include="asteroids.h">
-      <Filter>Headerdateien</Filter>
+    <ClInclude Include="inc\asteroids.h">
+      <Filter>Headerfiles</Filter>
     </ClInclude>
-    <ClInclude Include="core.h">
-      <Filter>Headerdateien</Filter>
+    <ClInclude Include="inc\core.h">
+      <Filter>Headerfiles</Filter>
     </ClInclude>
-    <ClInclude Include="gfx.h">
-      <Filter>Headerdateien</Filter>
+    <ClInclude Include="inc\gfx.h">
+      <Filter>Headerfiles</Filter>
     </ClInclude>
-    <ClInclude Include="main.h">
-      <Filter>Headerdateien</Filter>
+    <ClInclude Include="inc\main.h">
+      <Filter>Headerfiles</Filter>
     </ClInclude>
-    <ClInclude Include="array.h">
-      <Filter>Headerdateien</Filter>
+    <ClInclude Include="inc\system.h">
+      <Filter>Headerfiles</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Resource</Filter>
+    <ClInclude Include="inc\resource.h">
+      <Filter>Headerfiles</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.txt">
-      <Filter>docu</Filter>
+    <Text Include="doc\readme.txt">
+      <Filter>doc</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <Media Include="waves\Asthit.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\Asthit.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\CollAst.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\Level.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\Fire.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\Start.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\Level.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\AstExp.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\Shipexpl.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\AstShld.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\Start.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\ColAst.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\AstExp.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\FireSh.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\AstShld.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\FireWar.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\ColAst.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\GenItem.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\FireSh.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\GetItem.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\FireWar.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\ShipEx.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
-    <Media Include="waves\GenItem.wav">
-      <Filter>Waves</Filter>
-    </Media>
-    <Media Include="waves\GetItem.wav">
-      <Filter>Waves</Filter>
-    </Media>
-    <Media Include="waves\ShipEx.wav">
-      <Filter>Waves</Filter>
-    </Media>
-    <Media Include="waves\StartSc.wav">
-      <Filter>Waves</Filter>
+    <Media Include="res\waves\StartSc.wav">
+      <Filter>Resource\Waves</Filter>
     </Media>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="asteroids.rc">
+    <ResourceCompile Include="res\asteroids.rc">
       <Filter>Resource</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="asteroids.ico">
+    <Image Include="res\asteroids.ico">
       <Filter>Resource</Filter>
     </Image>
-    <Image Include="preview.gif">
+    <Image Include="res\preview.gif">
       <Filter>Resource</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md">
-      <Filter>docu</Filter>
+      <Filter>doc</Filter>
     </None>
     <None Include="LICENSE">
-      <Filter>docu</Filter>
+      <Filter>doc</Filter>
     </None>
-    <None Include="waves\_License - GDC Game Audio.pdf">
-      <Filter>docu</Filter>
+    <None Include="doc\waves\_License - GDC Game Audio.pdf">
+      <Filter>doc</Filter>
     </None>
-    <None Include="waves\_Game Audio GDC Bundle 2024 (Part 8) Filelist.xlsx">
-      <Filter>docu</Filter>
+    <None Include="doc\waves\_Game Audio GDC Bundle 2024 (Part 8) Filelist.xlsx">
+      <Filter>doc</Filter>
+    </None>
+    <None Include="doc\waves\_Readme.txt">
+      <Filter>doc</Filter>
     </None>
   </ItemGroup>
 </Project>

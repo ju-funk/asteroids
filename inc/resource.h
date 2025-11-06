@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Von Microsoft Visual C++ generierte Includedatei.
-// Verwendet durch asteroids.rc
+// Verwendet durch ..\res\asteroids.rc
 //
 #define IDW_OFFSET                      100
 #define IDW_START                       IDW_OFFSET
