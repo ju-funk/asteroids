@@ -1,7 +1,7 @@
 # Asteroids
 
 The Arcarde Game Asteroids only with C/C++ and Windows-GDI,  
-the base was from dila 2006 see in (21ae568e386d46a9472a71012382ec3904e8a604).
+the base was from dila 2006 see in (414ffc790be26aa158bd2846ad64a128aba42a00).
 
 <p align="center">
   <img width="1052" height="640" src="res/preview.gif">
